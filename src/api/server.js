@@ -10,7 +10,6 @@ import { requestLogger } from '~/src/helpers/logging/request-logger.js'
 import { requestTracing } from '~/src/helpers/request-tracing.js'
 import { prepareDb } from '~/src/mongo.js'
 import { router } from '~/src/plugins/router.js'
-import { transformErrors } from '~/src/plugins/transform-errors.js'
 import { prepareSecureContext } from '~/src/secure-context.js'
 
 const isProduction = config.get('isProduction')
@@ -63,7 +62,6 @@ export async function createServer() {
   }
 
   await prepareDb(server.logger)
-  await server.register(transformErrors)
   await server.register(router)
 
   return server
