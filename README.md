@@ -2,29 +2,30 @@
 
 Core delivery platform Node.js Backend Template.
 
-- [Requirements](#requirements)
-  - [Node.js](#nodejs)
-- [Local development](#local-development)
-  - [Setup](#setup)
-  - [Development](#development)
-  - [Testing](#testing)
-  - [Production](#production)
-  - [Npm scripts](#npm-scripts)
-  - [Update dependencies](#update-dependencies)
-  - [Formatting](#formatting)
-    - [Windows prettier issue](#windows-prettier-issue)
-- [API endpoints](#api-endpoints)
-- [Development helpers](#development-helpers)
-  - [MongoDB Locks](#mongodb-locks)
-  - [Proxy](#proxy)
-- [Docker](#docker)
-  - [Development image](#development-image)
-  - [Production image](#production-image)
-  - [Docker Compose](#docker-compose)
-  - [Dependabot](#dependabot)
-  - [SonarCloud](#sonarcloud)
-- [Licence](#licence)
-  - [About the licence](#about-the-licence)
+- [forms-entitlement-api](#forms-entitlement-api)
+  - [Requirements](#requirements)
+    - [Node.js](#nodejs)
+  - [Local development](#local-development)
+    - [Setup](#setup)
+    - [Development](#development)
+    - [Testing](#testing)
+    - [Production](#production)
+    - [Npm scripts](#npm-scripts)
+    - [Update dependencies](#update-dependencies)
+    - [Formatting](#formatting)
+      - [Windows prettier issue](#windows-prettier-issue)
+  - [API endpoints](#api-endpoints)
+  - [Development helpers](#development-helpers)
+    - [MongoDB Locks](#mongodb-locks)
+    - [Proxy](#proxy)
+  - [Docker](#docker)
+    - [Development image](#development-image)
+    - [Production image](#production-image)
+    - [Docker Compose](#docker-compose)
+    - [Dependabot](#dependabot)
+    - [SonarCloud](#sonarcloud)
+  - [Licence](#licence)
+    - [About the licence](#about-the-licence)
 
 ## Requirements
 
@@ -44,13 +45,33 @@ nvm use
 
 ### Setup
 
+1. Install Docker
+
+2. Bring up runtime dependencies
+
+```bash
+docker compose up
+```
+
+3. Create a `.env` file with the following mandatory environment variables populated at root level:
+
+```text
+MONGO_URI=""
+MONGO_DATABASE=""
+HTTP_PROXY=
+HTTPS_PROXY=
+NO_PROXY=
+```
+
+For proxy options, see https://www.npmjs.com/package/proxy-from-env which is used by https://github.com/TooTallNate/proxy-agents/tree/main/packages/proxy-agent. It's currently supports Hapi Wreck only, e.g. in the JWKS lookup.
+
+### Development
+
 Install application dependencies:
 
 ```bash
 npm install
 ```
-
-### Development
 
 To run the application in `development` mode run:
 
@@ -192,7 +213,7 @@ docker build --target development --no-cache --tag forms-entitlement-api:develop
 Run:
 
 ```bash
-docker run -e PORT=3001 -p 3001:3001 forms-entitlement-api:development
+docker run -e PORT=3003 -p 3003:3003 forms-entitlement-api:development
 ```
 
 ### Production image
@@ -206,7 +227,7 @@ docker build --no-cache --tag forms-entitlement-api .
 Run:
 
 ```bash
-docker run -e PORT=3001 -p 3001:3001 forms-entitlement-api
+docker run -e PORT=3003 -p 3003:3003 forms-entitlement-api
 ```
 
 ### Docker Compose

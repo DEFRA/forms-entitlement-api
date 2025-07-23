@@ -1,4 +1,9 @@
-function findAllExampleData(db) {
+import { db } from '~/src/mongo.js'
+
+/**
+ *
+ */
+function findAllExampleData() {
   const cursor = db
     .collection('example-data')
     .find({}, { projection: { _id: 0 } })
@@ -6,7 +11,10 @@ function findAllExampleData(db) {
   return cursor.toArray()
 }
 
-function findExampleData(db, id) {
+/**
+ * @param {string} id
+ */
+function findExampleData(id) {
   return db
     .collection('example-data')
     .findOne({ exampleId: id }, { projection: { _id: 0 } })
