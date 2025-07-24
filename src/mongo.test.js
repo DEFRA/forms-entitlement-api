@@ -8,12 +8,14 @@ const mockLogger = /** @type {any} */ ({
 
 jest.mock('mongodb')
 
+const createIndexMock = jest.fn()
+
 describe('mongo', () => {
   beforeEach(() => {
     MongoClient.connect = jest.fn().mockResolvedValue({
       db: jest.fn().mockReturnValue({
         collection: jest.fn().mockReturnValue({
-          createIndex: jest.fn()
+          createIndex: createIndexMock
         }),
         databaseName: 'my-db'
       })
@@ -24,5 +26,9 @@ describe('mongo', () => {
     const res = await prepareDb(mockLogger)
     expect(res).toBeDefined()
     expect(res.databaseName).toBe('my-db')
+    expect(createIndexMock).toHaveBeenCalledWith(
+      { userId: 1 },
+      { unique: true }
+    )
   })
 })
