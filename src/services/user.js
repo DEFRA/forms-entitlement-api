@@ -90,8 +90,6 @@ export async function addUser(userId, roles) {
       // Add the user
       const newUserEntity = await create(user, session)
 
-      // TODO - send audit event
-
       return newUserEntity
     })
 
@@ -130,8 +128,6 @@ export async function updateUser(userId, roles) {
 
       // Update the user
       const updatedUserEntity = await update(userId, user, session)
-
-      // TODO - send audit event
 
       return updatedUserEntity
     })
