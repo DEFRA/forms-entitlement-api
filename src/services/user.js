@@ -13,7 +13,7 @@ export const logger = createLogger()
 
 /**
  * Maps a user document from MongoDB to a user object
- * @param {WithId<Partial<UserEntitlementDocument>>} document - user document (with ID)
+ * @param {Partial<UserEntitlementDocument>} document - user document (with ID)
  * @returns {UserEntitlementDocument}
  */
 export function mapUser(document) {
