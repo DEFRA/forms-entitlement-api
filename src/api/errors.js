@@ -35,7 +35,7 @@ export class UserAlreadyExistsError extends ApplicationError {
    * @param {ErrorOptions} [options]
    */
   constructor(userId, options = {}) {
-    super(`User with userId ${userId} already exists`, {
+    super(`User with userID '${userId}' already exists`, {
       ...options,
       statusCode: 400
     })

@@ -57,13 +57,13 @@ export async function getAllUsers() {
  * @param {string} userId
  */
 export async function getUser(userId) {
-  logger.info(`Getting user with userID ${userId}`)
+  logger.info(`Getting user with userID '${userId}'`)
 
   try {
     return mapUser(await get(userId))
   } catch (err) {
     logger.error(
-      `[getUser] Failed to get user with userId ${userId} - ${getErrorMessage(err)}`
+      `[getUser] Failed to get user with userID '${userId}' - ${getErrorMessage(err)}`
     )
 
     throw err
@@ -76,7 +76,7 @@ export async function getUser(userId) {
  * @param {string[]} roles
  */
 export async function addUser(userId, roles) {
-  logger.info(`Adding user with userID ${userId}`)
+  logger.info(`Adding user with userID '${userId}'`)
 
   const session = client.startSession()
 
@@ -95,7 +95,7 @@ export async function addUser(userId, roles) {
       return newUserEntity
     })
 
-    logger.info(`Added user with userID ${userId}`)
+    logger.info(`Added user with userID '${userId}'`)
 
     return {
       id: userId,
@@ -116,7 +116,7 @@ export async function addUser(userId, roles) {
  * @param {string[]} roles
  */
 export async function updateUser(userId, roles) {
-  logger.info(`Updating user with userID ${userId}`)
+  logger.info(`Updating user with userID '${userId}'`)
 
   const session = client.startSession()
 
@@ -136,7 +136,7 @@ export async function updateUser(userId, roles) {
       return updatedUserEntity
     })
 
-    logger.info(`Updated user with userID ${userId}`)
+    logger.info(`Updated user with userID '${userId}'`)
 
     return {
       id: userId,
