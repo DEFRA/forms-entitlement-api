@@ -45,10 +45,7 @@ export async function get(userId, session = undefined) {
   const sessionOptions = /** @type {FindOptions} */ session && { session }
 
   try {
-    const document = await coll.findOne(
-      { _id: new ObjectId(userId) },
-      sessionOptions
-    )
+    const document = await coll.findOne({ userId }, sessionOptions)
 
     if (!document) {
       throw Boom.notFound(`User with ID '${userId}' not found`)
@@ -117,10 +114,10 @@ export async function create(document, session) {
 /**
  * Update a document in the database
  * @param {string} userId - ID of the user
- * @param {UpdateFilter<UserEntitlementDocument>} updateFilter - user entitlement document update filter
+ * @param {UserEntitlementDocument} user - user entitlement document
  * @param {ClientSession} [session] - mongo transaction session
  */
-export async function update(userId, updateFilter, session) {
+export async function update(userId, user, session) {
   logger.info(`Updating user with ID '${userId}'`)
 
   const coll = /** @satisfies {Collection<UserEntitlementDocument>} */ (
@@ -129,8 +126,8 @@ export async function update(userId, updateFilter, session) {
 
   try {
     const result = await coll.updateOne(
-      { _id: new ObjectId(userId) },
-      updateFilter,
+      { userId },
+      { $set: user },
       {
         session
       }

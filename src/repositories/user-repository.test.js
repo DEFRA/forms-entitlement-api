@@ -1,5 +1,5 @@
 import Boom from '@hapi/boom'
-import { MongoServerError, ObjectId } from 'mongodb'
+import { MongoServerError } from 'mongodb'
 
 import { buildMockCollection } from '~/src/api/__stubs__/mongo.js'
 import {
@@ -73,7 +73,7 @@ describe('user-repository', () => {
       const user = await get(mockUserId1)
       const [filter, options] = mockCollection.findOne.mock.calls[0]
 
-      expect(filter).toEqual({ _id: new ObjectId(mockUserId1) })
+      expect(filter).toEqual({ userId: mockUserId1 })
       expect(options).toBeUndefined()
       expect(user).toEqual(mockUserWithId)
     })
