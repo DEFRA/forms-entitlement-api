@@ -73,7 +73,7 @@ export default [
   {
     method: 'GET',
     path: '/roles',
-    handler: (request, h) => {
+    handler: (_request, h) => {
       const roles = Object.entries(Roles).map((role) => ({
         name: role[1],
         description: RoleDescriptions[role[1]]

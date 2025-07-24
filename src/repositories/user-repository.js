@@ -6,7 +6,9 @@ import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 import { USER_COLLECTION_NAME, db } from '~/src/mongo.js'
 
-export const MAX_RESULTS = 1000
+const MAX_RESULTS = 1000
+
+const DUPLICATE_DOCUMENT_CODE = 11000
 
 const logger = createLogger()
 
@@ -89,7 +91,10 @@ export async function create(document, session) {
   } catch (cause) {
     const message = `Creating user failed for user ID '${document.userId}'`
 
-    if (cause instanceof MongoServerError && cause.code === 11000) {
+    if (
+      cause instanceof MongoServerError &&
+      cause.code === DUPLICATE_DOCUMENT_CODE
+    ) {
       const error = new UserAlreadyExistsError(document.userId, { cause })
 
       logger.info(
@@ -112,10 +117,10 @@ export async function create(document, session) {
 /**
  * Update a document in the database
  * @param {string} userId - ID of the user
- * @param {UpdateFilter<UserEntitlementDocument>} update - user entitlement document update filter
+ * @param {UpdateFilter<UserEntitlementDocument>} updateFilter - user entitlement document update filter
  * @param {ClientSession} [session] - mongo transaction session
  */
-export async function update(userId, update, session) {
+export async function update(userId, updateFilter, session) {
   logger.info(`Updating user with ID '${userId}'`)
 
   const coll = /** @satisfies {Collection<UserEntitlementDocument>} */ (
@@ -123,9 +128,13 @@ export async function update(userId, update, session) {
   )
 
   try {
-    const result = await coll.updateOne({ _id: new ObjectId(userId) }, update, {
-      session
-    })
+    const result = await coll.updateOne(
+      { _id: new ObjectId(userId) },
+      updateFilter,
+      {
+        session
+      }
+    )
 
     // Throw if updated record count is not 1
     if (result.modifiedCount !== 1) {
