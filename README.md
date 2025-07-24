@@ -57,10 +57,6 @@ docker compose up
 
 ```text
 MONGO_URI=""
-MONGO_DATABASE=""
-HTTP_PROXY=
-HTTPS_PROXY=
-NO_PROXY=
 ```
 
 For proxy options, see https://www.npmjs.com/package/proxy-from-env which is used by https://github.com/TooTallNate/proxy-agents/tree/main/packages/proxy-agent. It's currently supports Hapi Wreck only, e.g. in the JWKS lookup.
@@ -127,11 +123,14 @@ git config --global core.autocrlf false
 
 ## API endpoints
 
-| Endpoint             | Description                    |
-| :------------------- | :----------------------------- |
-| `GET: /health`       | Health                         |
-| `GET: /example    `  | Example API (remove as needed) |
-| `GET: /example/<id>` | Example API (remove as needed) |
+| Endpoint               | Description                                    |
+| :--------------------- | :--------------------------------------------- |
+| `GET: /health`         | Health                                         |
+| `GET: /roles `         | Get a list of all roles and their descriptions |
+| `GET: /users`.         | Get a list of all users                        |
+| `GET: /users/<userid>` | Get a specific user                            |
+| `POST: /users`         | Add a user                                     |
+| `PUT: /users/<userid>` | Update a specific user                         |
 
 ## Development helpers
 
