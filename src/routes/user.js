@@ -38,11 +38,11 @@ export default [
      * @param {CreateUserRequest} request
      */
     handler: async (request, h) => {
-      const entity = await addUser(
+      const result = await addUser(
         request.payload.userId,
         request.payload.roles
       )
-      return h.response({ message: 'success', entity })
+      return h.response({ message: result.status, id: result.id })
     },
     options: {
       validate: {
@@ -57,11 +57,11 @@ export default [
      * @param {UpdateUserRequest} request
      */
     handler: async (request, h) => {
-      const entity = await updateUser(
+      const result = await updateUser(
         request.params.userId,
         request.payload.roles
       )
-      return h.response({ message: 'success', entity })
+      return h.response({ message: result.status, id: result.id })
     },
     options: {
       validate: {

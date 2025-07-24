@@ -1,7 +1,7 @@
 import Boom from '@hapi/boom'
 import { MongoServerError, ObjectId } from 'mongodb'
 
-import { UserAlreadyExistsError } from '~/src/api/forms/errors.js'
+import { UserAlreadyExistsError } from '~/src/api/errors.js'
 import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 import { USER_COLLECTION_NAME, db } from '~/src/mongo.js'
@@ -30,8 +30,9 @@ export async function getAll() {
 /**
  * Retrieves a user entitlement entry by ID
  * @param {string} userId - ID of the user
+ * @param {ClientSession | undefined} [session]
  */
-export async function get(userId) {
+export async function get(userId, session = undefined) {
   logger.info(`Getting user with ID ${userId}`)
 
   const coll =
@@ -39,8 +40,13 @@ export async function get(userId) {
       db.collection(USER_COLLECTION_NAME)
     )
 
+  const sessionOptions = /** @type {FindOptions} */ session && { session }
+
   try {
-    const document = await coll.findOne({ _id: new ObjectId(userId) })
+    const document = await coll.findOne(
+      { _id: new ObjectId(userId) },
+      sessionOptions
+    )
 
     if (!document) {
       throw Boom.notFound(`User with ID '${userId}' not found`)
@@ -51,7 +57,7 @@ export async function get(userId) {
     return document
   } catch (error) {
     logger.error(
-      `[getUserById] Getting user with ID ${userId} failed - ${getErrorMessage(error)}`
+      `[getUserById] Getting user with ID '${userId}' failed - ${getErrorMessage(error)}`
     )
 
     if (error instanceof Error && !Boom.isBoom(error)) {
@@ -68,7 +74,7 @@ export async function get(userId) {
  * @param {ClientSession} session - mongo transaction session
  */
 export async function create(document, session) {
-  logger.info(`Creating user`)
+  logger.info(`Creating user with user ID '${document.userId}'`)
 
   const coll = /** @satisfies {Collection<UserEntitlementDocument>} */ (
     db.collection(USER_COLLECTION_NAME)
@@ -76,19 +82,18 @@ export async function create(document, session) {
 
   try {
     const result = await coll.insertOne(document, { session })
-    const userId = result.insertedId.toString()
 
-    logger.info(`User created as user ID ${userId}`)
+    logger.info(`User created with user ID '${document.userId}'`)
 
     return result
   } catch (cause) {
-    const message = `Creating user failed`
+    const message = `Creating user failed for user ID '${document.userId}'`
 
     if (cause instanceof MongoServerError && cause.code === 11000) {
       const error = new UserAlreadyExistsError(document.userId, { cause })
 
       logger.info(
-        `[duplicateUser] Creating user with userId ${document.userId} failed - user already exists`
+        `[duplicateUser] Creating user with user ID '${document.userId}' failed - user already exists`
       )
       throw Boom.badRequest(error)
     }
@@ -111,7 +116,7 @@ export async function create(document, session) {
  * @param {ClientSession} [session] - mongo transaction session
  */
 export async function update(userId, update, session) {
-  logger.info(`Updating user with ID ${userId}`)
+  logger.info(`Updating user with ID '${userId}'`)
 
   const coll = /** @satisfies {Collection<UserEntitlementDocument>} */ (
     db.collection(USER_COLLECTION_NAME)
@@ -125,16 +130,16 @@ export async function update(userId, update, session) {
     // Throw if updated record count is not 1
     if (result.modifiedCount !== 1) {
       throw Boom.badRequest(
-        `User with ID ${userId} not updated. Modified count ${result.modifiedCount}`
+        `User with ID '${userId}' not updated. Modified count ${result.modifiedCount}`
       )
     }
 
-    logger.info(`User with ID ${userId} updated`)
+    logger.info(`User with ID '${userId}' updated`)
 
     return result
   } catch (error) {
     logger.error(
-      `[updateUser] Updating user with ID ${userId} failed - ${getErrorMessage(error)}`
+      `[updateUser] Updating user with ID '${userId}' failed - ${getErrorMessage(error)}`
     )
 
     if (error instanceof Error && !Boom.isBoom(error)) {
@@ -151,7 +156,7 @@ export async function update(userId, update, session) {
  * @param {ClientSession} session
  */
 export async function remove(userId, session) {
-  logger.info(`Removing user with ID ${userId}`)
+  logger.info(`Removing user with ID '${userId}'`)
 
   const coll = db.collection(USER_COLLECTION_NAME)
 
@@ -163,11 +168,11 @@ export async function remove(userId, session) {
 
   if (deletedCount !== 1) {
     throw new Error(
-      `Failed to delete user id '${userId}'. Expected deleted count of 1, received ${deletedCount}`
+      `Failed to delete user ID '${userId}'. Expected deleted count of 1, received ${deletedCount}`
     )
   }
 
-  logger.info(`Removed user with ID ${userId}`)
+  logger.info(`Removed user with ID '${userId}'`)
 }
 
 /**

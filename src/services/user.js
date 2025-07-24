@@ -12,13 +12,39 @@ import {
 export const logger = createLogger()
 
 /**
+ * Maps a user document from MongoDB to a user object
+ * @param {WithId<Partial<UserEntitlementDocument>>} document - user document (with ID)
+ * @returns {UserEntitlementDocument}
+ */
+export function mapUser(document) {
+  if (!document.userId || !document.roles || !document.scopes) {
+    throw Error(
+      'User is malformed in the database. Expected fields are missing.'
+    )
+  }
+
+  return {
+    userId: document.userId,
+    roles: document.roles,
+    scopes: document.scopes
+  }
+}
+
+/**
+ * @param {WithId<Partial<UserEntitlementDocument>>[]} documents - user documents (with ID)
+ */
+export function mapUsers(documents) {
+  return documents.map((doc) => mapUser(doc))
+}
+
+/**
  * Get all users
  */
 export async function getAllUsers() {
   logger.info(`Getting all users`)
 
   try {
-    return await getAll()
+    return mapUsers(await getAll())
   } catch (err) {
     logger.error(`[getUser] Failed to get all users - ${getErrorMessage(err)}`)
 
@@ -34,7 +60,7 @@ export async function getUser(userId) {
   logger.info(`Getting user with userID ${userId}`)
 
   try {
-    return await get(userId)
+    return mapUser(await get(userId))
   } catch (err) {
     logger.error(
       `[getUser] Failed to get user with userId ${userId} - ${getErrorMessage(err)}`
@@ -55,7 +81,7 @@ export async function addUser(userId, roles) {
   const session = client.startSession()
 
   try {
-    const newUser = await session.withTransaction(async () => {
+    await session.withTransaction(async () => {
       const user = {
         userId,
         roles,
@@ -71,7 +97,10 @@ export async function addUser(userId, roles) {
 
     logger.info(`Added user with userID ${userId}`)
 
-    return newUser
+    return {
+      id: userId,
+      status: 'success'
+    }
   } catch (err) {
     logger.error(`[addUser] Failed to add user - ${getErrorMessage(err)}`)
 
@@ -92,7 +121,7 @@ export async function updateUser(userId, roles) {
   const session = client.startSession()
 
   try {
-    const updatedUser = await session.withTransaction(async () => {
+    await session.withTransaction(async () => {
       const user = {
         userId,
         roles,
@@ -109,7 +138,10 @@ export async function updateUser(userId, roles) {
 
     logger.info(`Updated user with userID ${userId}`)
 
-    return updatedUser
+    return {
+      id: userId,
+      status: 'success'
+    }
   } catch (err) {
     logger.error(`[updateUser] Failed to update user - ${getErrorMessage(err)}`)
 
@@ -121,4 +153,5 @@ export async function updateUser(userId, roles) {
 
 /**
  * @import { UserEntitlementDocument } from '~/src/api/types.js'
+ * @import { WithId } from 'mongodb'
  */
