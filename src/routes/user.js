@@ -77,7 +77,7 @@ export default [
     method: 'DELETE',
     path: USER_BY_ID_PATH,
     /**
-     * @param {UpdateUserRequest} request
+     * @param {DeleteUserRequest} request
      */
     handler: async (request, h) => {
       const result = await deleteUser(request.params.userId)
@@ -104,5 +104,5 @@ export default [
 
 /**
  * @import { ServerRoute } from '@hapi/hapi'
- * @import { CreateUserRequest, UpdateUserRequest } from '~/src/api/types.js'
+ * @import { CreateUserRequest, DeleteUserRequest, UpdateUserRequest } from '~/src/api/types.js'
  */
