@@ -12,6 +12,8 @@ import {
   updateUser
 } from '~/src/services/user.js'
 
+const USER_BY_ID_PATH = '/users/{userId}'
+
 /**
  * @type {ServerRoute[]}
  */
@@ -26,7 +28,7 @@ export default [
   },
   {
     method: 'GET',
-    path: '/users/{userId}',
+    path: USER_BY_ID_PATH,
     handler: async (request, h) => {
       const entity = await getUser(request.params.userId)
       return h.response({ message: 'success', entity })
@@ -53,7 +55,7 @@ export default [
   },
   {
     method: 'PUT',
-    path: '/users/{userId}',
+    path: USER_BY_ID_PATH,
     /**
      * @param {UpdateUserRequest} request
      */
@@ -73,7 +75,7 @@ export default [
   },
   {
     method: 'DELETE',
-    path: '/users/{userId}',
+    path: USER_BY_ID_PATH,
     /**
      * @param {UpdateUserRequest} request
      */
