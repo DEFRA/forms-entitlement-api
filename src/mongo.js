@@ -13,8 +13,7 @@ export let db
  */
 export let client
 
-export const METADATA_COLLECTION_NAME = 'form-metadata'
-export const DEFINITION_COLLECTION_NAME = 'form-definition'
+export const USER_COLLECTION_NAME = 'user-entitlement'
 
 /**
  * Connects to mongo database
@@ -40,10 +39,9 @@ export async function prepareDb(logger) {
   db = client.db(databaseName)
 
   // Ensure db indexes
-  const coll = db.collection(METADATA_COLLECTION_NAME)
+  const coll = db.collection(USER_COLLECTION_NAME)
 
-  await coll.createIndex({ title: 1 })
-  await coll.createIndex({ slug: 1 }, { unique: true })
+  await coll.createIndex({ userId: 1 }, { unique: true })
 
   logger.info(`Mongodb connected to ${databaseName}`)
 

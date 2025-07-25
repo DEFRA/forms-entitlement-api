@@ -1,0 +1,35 @@
+import { Roles } from '~/src/repositories/roles.js'
+import { mapScopesToRoles } from '~/src/repositories/scopes.js'
+
+describe('Scopes', () => {
+  test('should return all Admin scopes', () => {
+    expect(mapScopesToRoles([Roles.Admin])).toEqual([
+      'form-delete',
+      'form-edit',
+      'form-read',
+      'user-create',
+      'user-delete',
+      'user-edit'
+    ])
+  })
+
+  test('should return scopes without duplication', () => {
+    expect(
+      mapScopesToRoles([Roles.Admin, Roles.FormCreator, Roles.Admin])
+    ).toEqual([
+      'form-delete',
+      'form-edit',
+      'form-read',
+      'user-create',
+      'user-delete',
+      'user-edit'
+    ])
+  })
+
+  test('should handle incorrect role', () => {
+    expect(mapScopesToRoles([Roles.FormCreator, 'invalid'])).toEqual([
+      'form-read',
+      'form-edit'
+    ])
+  })
+})

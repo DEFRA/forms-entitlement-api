@@ -1,45 +1,345 @@
 {
-    "info": {
-        "_postman_id": "3aec9dae-9486-48f6-b2f4-21b532ffd6fa",
-        "name": "forms-entitlement-api",
-        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-        "_exporter_id": "37142382"
-    },
-    "item": [
+  "info": {
+    "_postman_id": "7d37736f-7f8e-4b20-8d8f-260b06192ab8",
+    "name": "Entitlement",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "23938788"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "event": [
         {
-            "name": "Health",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "",
-                            "pm.test(\"response is ok\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});"
-                        ],
-                        "type": "text/javascript",
-                        "packages": {}
-                    }
-                }
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"response is ok\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
             ],
-            "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                    "raw": "{{root}}/health",
-                    "host": [
-                        "{{root}}"
-                    ],
-                    "path": [
-                        "health"
-                    ]
-                }
-            },
-            "response": []
+            "type": "text/javascript",
+            "packages": {}
+          }
         }
-    ],
-    "auth": {},
-    "event": [],
-    "variable": []
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{root}}/health",
+          "host": [
+            "{{root}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add user 1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"response is ok\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData.message).to.eq('success')",
+              "    pm.expect(responseData.id).to.eq('user-id1')",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"userId\": \"user-id1\",\n    \"roles\": [\"admin\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{root}}/users",
+          "host": [
+            "{{root}}"
+          ],
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add user 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"response is ok\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData.message).to.eq('success')",
+              "    pm.expect(responseData.id).to.eq('user-id2')",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"userId\": \"user-id2\",\n    \"roles\": [\"form-creator\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{root}}/users",
+          "host": [
+            "{{root}}"
+          ],
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"response is ok\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData.message).to.eq('success');",
+              "    pm.expect(responseData.entities.length).to.eq(2);",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{root}}/users",
+          "host": [
+            "{{root}}"
+          ],
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get user 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"response is ok\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData.message).to.equal('success');",
+              "    pm.expect(responseData.entity.userId).to.eq('user-id2');",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{root}}/users/user-id2",
+          "host": [
+            "{{root}}"
+          ],
+          "path": [
+            "users",
+            "user-id2"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update user 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"response is ok\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"roles\": [\"admin\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{root}}/users/user-id2",
+          "host": [
+            "{{root}}"
+          ],
+          "path": [
+            "users",
+            "user-id2"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get user 2 after update",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"response is ok\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData.message).to.equal('success');",
+              "    pm.expect(responseData.entity.userId).to.eq('user-id2');",
+              "    pm.expect(responseData.entity.roles.length).to.eq(1);",
+              "    pm.expect(responseData.entity.roles[0]).to.eq('admin');",
+              "    pm.expect(responseData.entity.scopes[0]).to.eq('form-delete');",
+              "    pm.expect(responseData.entity.scopes[3]).to.eq('user-create');",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{root}}/users/user-id2",
+          "host": [
+            "{{root}}"
+          ],
+          "path": [
+            "users",
+            "user-id2"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete user 2",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"response is ok\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{root}}/users/user-id2",
+          "host": [
+            "{{root}}"
+          ],
+          "path": [
+            "users",
+            "user-id2"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "List users again",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"response is ok\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    const responseData = pm.response.json();",
+              "    pm.expect(responseData.message).to.eq('success');",
+              "    pm.expect(responseData.entities.length).to.eq(1);",
+              "    pm.expect(responseData.entities[0].userId).to.eq('user-id1');",
+              "});",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{root}}/users",
+          "host": [
+            "{{root}}"
+          ],
+          "path": [
+            "users"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
 }
