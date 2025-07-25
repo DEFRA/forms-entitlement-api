@@ -6,6 +6,7 @@ import {
   create,
   get,
   getAll,
+  remove,
   update
 } from '~/src/repositories/user-repository.js'
 
@@ -140,6 +141,35 @@ export async function updateUser(userId, roles) {
     }
   } catch (err) {
     logger.error(`[updateUser] Failed to update user - ${getErrorMessage(err)}`)
+
+    throw err
+  } finally {
+    await session.endSession()
+  }
+}
+
+/**
+ * Delete a user
+ * @param {string} userId
+ */
+export async function deleteUser(userId) {
+  logger.info(`Deleting user with userID '${userId}'`)
+
+  const session = client.startSession()
+
+  try {
+    await session.withTransaction(async () => {
+      await remove(userId, session)
+    })
+
+    logger.info(`Deleted user with userID '${userId}'`)
+
+    return {
+      id: userId,
+      status: 'success'
+    }
+  } catch (err) {
+    logger.error(`[deleteUser] Failed to delete user - ${getErrorMessage(err)}`)
 
     throw err
   } finally {

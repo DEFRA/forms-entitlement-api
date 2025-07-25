@@ -1,7 +1,6 @@
 import Boom from '@hapi/boom'
-import { MongoServerError, ObjectId } from 'mongodb'
+import { MongoServerError } from 'mongodb'
 
-import { UserAlreadyExistsError } from '~/src/api/errors.js'
 import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 import { USER_COLLECTION_NAME, db } from '~/src/mongo.js'
@@ -92,12 +91,10 @@ export async function create(document, session) {
       cause instanceof MongoServerError &&
       cause.code === DUPLICATE_DOCUMENT_CODE
     ) {
-      const error = new UserAlreadyExistsError(document.userId, { cause })
-
       logger.info(
         `[duplicateUser] Creating user with user ID '${document.userId}' failed - user already exists`
       )
-      throw Boom.badRequest(error)
+      throw Boom.conflict('User already exists')
     }
 
     if (cause instanceof MongoServerError) {
@@ -166,10 +163,7 @@ export async function remove(userId, session) {
 
   const coll = db.collection(USER_COLLECTION_NAME)
 
-  const result = await coll.deleteOne(
-    { _id: new ObjectId(userId) },
-    { session }
-  )
+  const result = await coll.deleteOne({ userId }, { session })
   const { deletedCount } = result
 
   if (deletedCount !== 1) {

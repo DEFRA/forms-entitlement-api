@@ -19,12 +19,17 @@ export const RoleScopes = {
 }
 
 /**
+ * Return a unique list of scopes based on the array of roles passed in
  * @param {string[]} roles
+ * @returns {string[]}
  */
 export function mapScopesToRoles(roles) {
-  const scopes = /** @type {string[]} */ ([])
+  const scopeSet = new Set()
   roles.forEach((role) => {
-    scopes.push(...RoleScopes[role])
+    const scopes = RoleScopes[role] ?? []
+    scopes.forEach((scope) => {
+      scopeSet.add(scope)
+    })
   })
-  return scopes
+  return Array.from(scopeSet)
 }

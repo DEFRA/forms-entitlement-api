@@ -13,10 +13,12 @@ import {
   create,
   get,
   getAll,
+  remove,
   update
 } from '~/src/repositories/user-repository.js'
 import {
   addUser,
+  deleteUser,
   getAllUsers,
   getUser,
   mapUser,
@@ -163,6 +165,25 @@ describe('User service', () => {
       await expect(updateUser('123', [Roles.Admin])).rejects.toThrow(
         'backend error'
       )
+    })
+  })
+
+  describe('deleteUser', () => {
+    it('should delete user', async () => {
+      jest.mocked(remove).mockResolvedValue()
+
+      const result = await deleteUser(mockUserId1)
+
+      expect(result.id).toBe(mockUserId1)
+      expect(result.status).toBe('success')
+    })
+
+    it('should throw if error', async () => {
+      jest.mocked(remove).mockImplementation(() => {
+        throw new Error('backend error')
+      })
+
+      await expect(deleteUser('123')).rejects.toThrow('backend error')
     })
   })
 })

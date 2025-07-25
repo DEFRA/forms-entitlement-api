@@ -152,7 +152,7 @@ describe('user-repository', () => {
         throw new MongoServerError({ message: 'server error', code: 11000 })
       })
       await expect(create(mockUser, mockSession)).rejects.toThrow(
-        "User with userID 'user-id-admin' already exists"
+        'User already exists'
       )
     })
 

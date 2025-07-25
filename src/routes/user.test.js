@@ -5,6 +5,7 @@ import {
 import { createServer } from '~/src/api/server.js'
 import {
   addUser,
+  deleteUser,
   getAllUsers,
   getUser,
   updateUser
@@ -98,6 +99,24 @@ describe('User route', () => {
           payload: {
             roles: mockAdminUser.roles
           },
+          auth
+        })
+
+        expect(response.statusCode).toEqual(okStatusCode)
+        expect(response.headers['content-type']).toContain(jsonContentType)
+        expect(response.result).toEqual({ id: '456', message: 'success' })
+      })
+    })
+
+    describe('DELETE /users/{userId}', () => {
+      test('should delete the user', async () => {
+        jest
+          .mocked(deleteUser)
+          .mockResolvedValue({ id: '456', status: 'success' })
+
+        const response = await server.inject({
+          method: 'DELETE',
+          url: '/users/123',
           auth
         })
 

@@ -12,4 +12,17 @@ describe('Scopes', () => {
       'user-edit'
     ])
   })
+
+  test('should return scopes without duplication', () => {
+    expect(
+      mapScopesToRoles([Roles.Admin, Roles.FormCreator, Roles.Admin])
+    ).toEqual([
+      'form-delete',
+      'form-edit',
+      'form-read',
+      'user-create',
+      'user-delete',
+      'user-edit'
+    ])
+  })
 })

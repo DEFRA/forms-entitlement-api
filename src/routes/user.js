@@ -6,6 +6,7 @@ import {
 } from '~/src/schemas/user.js'
 import {
   addUser,
+  deleteUser,
   getAllUsers,
   getUser,
   updateUser
@@ -66,6 +67,22 @@ export default [
     options: {
       validate: {
         payload: updateUserSchema,
+        params: userIdSchema
+      }
+    }
+  },
+  {
+    method: 'DELETE',
+    path: '/users/{userId}',
+    /**
+     * @param {UpdateUserRequest} request
+     */
+    handler: async (request, h) => {
+      const result = await deleteUser(request.params.userId)
+      return h.response({ message: result.status, id: result.id })
+    },
+    options: {
+      validate: {
         params: userIdSchema
       }
     }
