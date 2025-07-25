@@ -25,4 +25,11 @@ describe('Scopes', () => {
       'user-edit'
     ])
   })
+
+  test('should handle incorrect role', () => {
+    expect(mapScopesToRoles([Roles.FormCreator, 'invalid'])).toEqual([
+      'form-read',
+      'form-edit'
+    ])
+  })
 })
