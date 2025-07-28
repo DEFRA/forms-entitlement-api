@@ -138,26 +138,26 @@ export const config = convict({
     doc: 'The URI that defines the OIDC json web key set',
     format: String,
     default:
-      'https://login.microsoftonline.com/770a2450-0227-4c62-90c7-4e38537f1102/discovery/v2.0/keys',
+      'https://login.microsoftonline.com/6f504113-6b64-43f2-ade9-242e05780007/discovery/v2.0/keys',
     env: 'OIDC_JWKS_URI'
   },
   oidcVerifyAud: {
     doc: 'The audience used for verifying the OIDC JWT',
     format: String,
-    default: 'ec32e5c5-75fa-460a-a359-e3e5a4a8f10e',
+    default: '6be2d9fd-fe1e-47eb-9821-b6f6cd3ceba1',
     env: 'OIDC_VERIFY_AUD'
   },
   oidcVerifyIss: {
     doc: 'The issuer used for verifying the OIDC JWT',
     format: String,
     default:
-      'https://login.microsoftonline.com/770a2450-0227-4c62-90c7-4e38537f1102/v2.0',
+      'https://login.microsoftonline.com/6f504113-6b64-43f2-ade9-242e05780007/v2.0',
     env: 'OIDC_VERIFY_ISS'
   },
   roleEditorGroupId: {
     doc: 'The AD security group the access token needs to claim membership of',
     format: String,
-    default: '9af646c4-fa14-4606-8ebf-ec187ac03386',
+    default: '7049296f-2156-4d61-8ac3-349276438ef9',
     env: 'ROLE_EDITOR_GROUP_ID'
   },
   tracing: {

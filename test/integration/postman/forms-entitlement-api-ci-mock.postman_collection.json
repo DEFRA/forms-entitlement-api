@@ -341,5 +341,102 @@
       },
       "response": []
     }
+  ],
+  "auth": {
+      "type": "bearer",
+      "bearer": [
+          {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+          }
+      ]
+  },
+  "event": [
+    {
+        "listen": "prerequest",
+        "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "exec": [
+                "// Collection Pre-request Script",
+                "",
+                "function fetchNewToken() {",
+                "    const username = pm.environment.get('username');",
+                "    const password = pm.environment.get('password');",
+                "    const clientId = pm.environment.get('clientId');",
+                "    const clientSecret = pm.environment.get('clientSecret');",
+                "    const scope = pm.environment.get('scope');",
+                "    const accessTokenUrl = pm.environment.get('accessTokenUrl');",
+                "",
+                "    console.log(\"Attempting to fetch new token...\");",
+                "",
+                "    let basicAuthHeaderValue = \"\";",
+                "    try {",
+                "        const credentialsToEncode = clientId + \":\" + clientSecret;",
+                "        basicAuthHeaderValue = \"Basic \" + btoa(credentialsToEncode);",
+                "    } catch (e) {",
+                "        console.error(\"Error encoding Basic Auth for token request:\", e);",
+                "        return; ",
+                "    }",
+                "",
+                "    pm.sendRequest({",
+                "        url: accessTokenUrl,",
+                "        method: 'POST',",
+                "        header: [",
+                "            { key: 'Content-Type', value: 'application/x-www-form-urlencoded' },",
+                "            { key: 'Authorization', value: basicAuthHeaderValue }",
+                "        ],",
+                "        body: {",
+                "            mode: 'urlencoded',",
+                "            urlencoded: [",
+                "                { key: 'grant_type', value: 'password' },",
+                "                { key: 'username', value: username },",
+                "                { key: 'password', value: password },",
+                "                { key: 'scope', value: scope }",
+                "            ]",
+                "        }",
+                "    }, function(err, res) {",
+                "        if (err) {",
+                "            console.error('Error fetching token:', JSON.stringify(err));",
+                "            pm.environment.unset('access_token');",
+                "            pm.environment.unset('token_expiry_time');",
+                "        } else {",
+                "            if (res.code === 200) {",
+                "                var responseJson = res.json();",
+                "                pm.environment.set('access_token', responseJson.access_token);",
+                "                const expiryTime = Date.now() + (responseJson.expires_in * 1000) - 30000; ",
+                "                pm.environment.set('token_expiry_time', expiryTime);",
+                "                console.log('New token acquired. Expires around: ' + new Date(expiryTime).toLocaleTimeString());",
+                "            } else {",
+                "                console.error('Failed to get new token. Status:', res.code, 'Body:', res.text());",
+                "                pm.environment.unset('access_token');",
+                "                pm.environment.unset('token_expiry_time');",
+                "            }",
+                "        }",
+                "    });",
+                "}",
+                "",
+                "const existingToken = pm.environment.get('access_token');",
+                "const expiryTime = pm.environment.get('token_expiry_time');",
+                "",
+                "if (existingToken && expiryTime && Date.now() < parseInt(expiryTime)) {",
+                "    // console.log('Using existing, valid token.'); // Optional: uncomment for debugging token reuse",
+                "} else {",
+                "    fetchNewToken();",
+                "}"
+            ]
+        }
+    },
+    {
+        "listen": "test",
+        "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "exec": [
+                ""
+            ]
+        }
+    }
   ]
 }
