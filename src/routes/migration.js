@@ -1,0 +1,60 @@
+import Boom from '@hapi/boom'
+import Joi from 'joi'
+
+import { getErrorMessage } from '~/src/helpers/error-message.js'
+import { migrateUsersFromAzureGroup } from '~/src/services/user.js'
+
+/**
+ * @type {ServerRoute[]}
+ */
+export default [
+  {
+    method: 'POST',
+    path: '/users/migrate',
+    handler: async (request, h) => {
+      const { roles = ['form-creator'] } =
+        /** @type {{roles?: string[]}} */ (request.payload) || {}
+
+      try {
+        const migrationResult = await migrateUsersFromAzureGroup(roles)
+
+        return h.response({
+          message: 'Migration completed',
+          ...migrationResult
+        })
+      } catch (error) {
+        if (Boom.isBoom(error)) {
+          throw error
+        }
+
+        request.logger.error(`User migration failed: ${getErrorMessage(error)}`)
+        return h
+          .response({
+            message: 'Migration failed',
+            error: getErrorMessage(error)
+          })
+          .code(500)
+      }
+    },
+    options: {
+      auth: 'azure-oidc-token',
+      validate: {
+        payload: Joi.object({
+          roles: Joi.array()
+            .items(
+              Joi.string().valid('admin', 'form-publisher', 'form-creator')
+            )
+            .optional()
+        }).allow(null)
+      },
+      description: 'Migrate users from Azure AD group to entitlements api',
+      notes:
+        'Bulk imports users from the configured Azure AD migration source group',
+      tags: ['api', 'migration', 'users']
+    }
+  }
+]
+
+/**
+ * @import { ServerRoute } from '@hapi/hapi'
+ */

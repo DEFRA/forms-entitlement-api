@@ -37,12 +37,15 @@
     "setup:husky": "node -e \"try { (await import('husky')).default() } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e }\" --input-type module"
   },
   "dependencies": {
+    "@azure/identity": "4.10.2",
+    "@azure/msal-node": "3.6.4",
     "@defra/forms-model": "^3.0.496",
     "@defra/hapi-tracing": "^1.26.0",
     "@elastic/ecs-pino-format": "^1.5.0",
     "@hapi/hapi": "^21.4.0",
     "@hapi/hoek": "^11.0.7",
     "@hapi/jwt": "3.2.0",
+    "@microsoft/microsoft-graph-client": "3.0.7",
     "aws-embedded-metrics": "4.2.0",
     "aws4": "^1.13.2",
     "convict": "^6.2.4",

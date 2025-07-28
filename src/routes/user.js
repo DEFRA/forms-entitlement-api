@@ -1,3 +1,6 @@
+import Boom from '@hapi/boom'
+
+import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { RoleDetails, Roles } from '~/src/repositories/roles.js'
 import {
   createUserSchema,
@@ -41,11 +44,25 @@ export default [
      * @param {CreateUserRequest} request
      */
     handler: async (request, h) => {
-      const result = await addUser(
-        request.payload.userId,
-        request.payload.roles
-      )
-      return h.response({ message: result.status, id: result.id })
+      try {
+        const result = await addUser(
+          request.payload.userId,
+          request.payload.roles
+        )
+        return h.response({ message: result.status, id: result.id })
+      } catch (error) {
+        const errorMessage = getErrorMessage(error)
+
+        if (errorMessage.includes('Insufficient privileges')) {
+          throw Boom.forbidden('Permission denied')
+        }
+
+        if (errorMessage.includes('User not found')) {
+          throw Boom.notFound('User not found')
+        }
+
+        throw error
+      }
     },
     options: {
       validate: {
@@ -60,11 +77,25 @@ export default [
      * @param {UpdateUserRequest} request
      */
     handler: async (request, h) => {
-      const result = await updateUser(
-        request.params.userId,
-        request.payload.roles
-      )
-      return h.response({ message: result.status, id: result.id })
+      try {
+        const result = await updateUser(
+          request.params.userId,
+          request.payload.roles
+        )
+        return h.response({ message: result.status, id: result.id })
+      } catch (error) {
+        const errorMessage = getErrorMessage(error)
+
+        if (errorMessage.includes('Insufficient privileges')) {
+          throw Boom.forbidden('Permission denied')
+        }
+
+        if (errorMessage.includes('User not found')) {
+          throw Boom.notFound('User not found')
+        }
+
+        throw error
+      }
     },
     options: {
       validate: {

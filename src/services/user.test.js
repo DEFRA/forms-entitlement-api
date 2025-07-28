@@ -16,6 +16,7 @@ import {
   remove,
   update
 } from '~/src/repositories/user-repository.js'
+import * as azureAdModule from '~/src/services/azure-ad.js'
 import {
   addUser,
   deleteUser,
@@ -37,6 +38,18 @@ describe('User service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+
+    const mockValidateUser = jest.fn().mockResolvedValue({
+      id: 'test-user-id',
+      displayName: 'Test User',
+      email: 'test@defra.gov.uk'
+    })
+
+    jest.spyOn(azureAdModule, 'getAzureAdService').mockReturnValue(
+      /** @type {any} */ ({
+        validateUser: mockValidateUser
+      })
+    )
   })
 
   describe('mapUser', () => {
@@ -130,9 +143,16 @@ describe('User service', () => {
     })
 
     it('should throw if error', async () => {
-      jest.mocked(create).mockImplementation(() => {
-        throw new Error('backend error')
-      })
+      // Mock Azure AD service to throw an error
+      const mockValidateUser = jest
+        .fn()
+        .mockRejectedValue(new Error('backend error'))
+
+      jest.spyOn(azureAdModule, 'getAzureAdService').mockReturnValue(
+        /** @type {any} */ ({
+          validateUser: mockValidateUser
+        })
+      )
 
       await expect(addUser('123', [Roles.Admin])).rejects.toThrow(
         'backend error'
