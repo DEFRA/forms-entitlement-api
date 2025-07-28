@@ -9,10 +9,17 @@ export const Roles = {
 
 /**
  * @readonly
- * @enum {string}
+ * @enum {{ name: string, code: string, description: string}}
  */
-export const RoleDescriptions = {
-  [Roles.Admin]: 'Allows full access to forms and user management functions',
-  [Roles.FormCreator]:
-    'Allows a user to create a form and edit it while in draft'
+export const RoleDetails = {
+  [Roles.Admin]: {
+    name: 'Admin',
+    code: 'admin',
+    description: 'Allows full access to forms and user management functions'
+  },
+  [Roles.FormCreator]: {
+    name: 'Form creator',
+    code: 'form-creator',
+    description: 'Allows a user to create a form and edit it while in draft'
+  }
 }

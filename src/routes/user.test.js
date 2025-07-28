@@ -140,12 +140,14 @@ describe('User route', () => {
           message: 'success',
           roles: [
             {
-              name: 'admin',
+              name: 'Admin',
+              code: 'admin',
               description:
                 'Allows full access to forms and user management functions'
             },
             {
-              name: 'form-creator',
+              name: 'Form creator',
+              code: 'form-creator',
               description:
                 'Allows a user to create a form and edit it while in draft'
             }
