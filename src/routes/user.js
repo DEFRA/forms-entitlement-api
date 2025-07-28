@@ -1,4 +1,4 @@
-import { RoleDescriptions, Roles } from '~/src/repositories/roles.js'
+import { RoleDetails, Roles } from '~/src/repositories/roles.js'
 import {
   createUserSchema,
   updateUserSchema,
@@ -93,10 +93,14 @@ export default [
     method: 'GET',
     path: '/roles',
     handler: (_request, h) => {
-      const roles = Object.entries(Roles).map((role) => ({
-        name: role[1],
-        description: RoleDescriptions[role[1]]
-      }))
+      const roles = Object.entries(Roles).map((role) => {
+        const roleDetails = RoleDetails[role[1]]
+        return {
+          name: roleDetails.name,
+          code: roleDetails.code,
+          description: roleDetails.description
+        }
+      })
       return h.response({ message: 'success', roles })
     }
   }
