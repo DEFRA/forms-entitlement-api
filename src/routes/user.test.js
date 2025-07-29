@@ -69,21 +69,42 @@ describe('User route', () => {
 
     describe('POST /users', () => {
       test('should add the user', async () => {
-        jest.mocked(addUser).mockResolvedValue({ id: '123', status: 'success' })
+        jest.mocked(addUser).mockResolvedValue({
+          id: 'user-test-defra-gov-uk',
+          email: 'test@defra.gov.uk',
+          displayName: 'Test User',
+          status: 'success'
+        })
+
+        jest.mocked(getUser).mockResolvedValue({
+          userId: 'user-test-defra-gov-uk',
+          roles: ['form-creator'],
+          scopes: ['form_create', 'form_update']
+        })
 
         const response = await server.inject({
           method: 'POST',
           url: '/users',
           payload: {
-            userId: mockFormCreatorUser.userId,
-            roles: mockFormCreatorUser.roles
+            email: 'test@defra.gov.uk',
+            roles: ['form-creator']
           },
           auth
         })
 
         expect(response.statusCode).toEqual(okStatusCode)
         expect(response.headers['content-type']).toContain(jsonContentType)
-        expect(response.result).toEqual({ id: '123', message: 'success' })
+        expect(response.result).toEqual({
+          id: 'user-test-defra-gov-uk',
+          email: 'test@defra.gov.uk',
+          displayName: 'Test User',
+          message: 'success',
+          entity: {
+            userId: 'user-test-defra-gov-uk',
+            roles: ['form-creator'],
+            scopes: ['form_create', 'form_update']
+          }
+        })
       })
     })
 

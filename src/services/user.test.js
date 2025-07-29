@@ -45,9 +45,18 @@ describe('User service', () => {
       email: 'test@defra.gov.uk'
     })
 
+    const mockGetUserByEmail = jest.fn().mockImplementation((email) =>
+      Promise.resolve({
+        id: `user-${email.replace('@', '-').replace('.', '-')}`,
+        displayName: 'Test User',
+        email
+      })
+    )
+
     jest.spyOn(azureAdModule, 'getAzureAdService').mockReturnValue(
       /** @type {any} */ ({
-        validateUser: mockValidateUser
+        validateUser: mockValidateUser,
+        getUserByEmail: mockGetUserByEmail
       })
     )
   })
@@ -135,26 +144,31 @@ describe('User service', () => {
         insertedId: new ObjectId(mockUserId1)
       })
 
+      const testEmail = 'test@defra.gov.uk'
       const rolesToAdd = [Roles.Admin]
-      const result = await addUser(mockUserId1, rolesToAdd)
+      const result = await addUser(testEmail, rolesToAdd)
 
-      expect(result.id).toBe(mockUserId1)
+      expect(result.id).toBe(
+        `user-${testEmail.replace('@', '-').replace('.', '-')}`
+      )
+      expect(result.email).toBe(testEmail)
+      expect(result.displayName).toBe('Test User')
       expect(result.status).toBe('success')
     })
 
     it('should throw if error', async () => {
       // Mock Azure AD service to throw an error
-      const mockValidateUser = jest
+      const mockGetUserByEmail = jest
         .fn()
         .mockRejectedValue(new Error('backend error'))
 
       jest.spyOn(azureAdModule, 'getAzureAdService').mockReturnValue(
         /** @type {any} */ ({
-          validateUser: mockValidateUser
+          getUserByEmail: mockGetUserByEmail
         })
       )
 
-      await expect(addUser('123', [Roles.Admin])).rejects.toThrow(
+      await expect(addUser('test@defra.gov.uk', [Roles.Admin])).rejects.toThrow(
         'backend error'
       )
     })
