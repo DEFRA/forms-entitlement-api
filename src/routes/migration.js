@@ -2,6 +2,7 @@ import Boom from '@hapi/boom'
 import Joi from 'joi'
 
 import { getErrorMessage } from '~/src/helpers/error-message.js'
+import { Roles } from '~/src/repositories/roles.js'
 import { migrateUsersFromAzureGroup } from '~/src/services/user.js'
 
 /**
@@ -12,7 +13,7 @@ export default [
     method: 'POST',
     path: '/users/migrate',
     handler: async (request, h) => {
-      const { roles = ['form-creator'] } =
+      const { roles = [Roles.FormCreator] } =
         /** @type {{roles?: string[]}} */ (request.payload) || {}
 
       try {
@@ -37,7 +38,11 @@ export default [
         payload: Joi.object({
           roles: Joi.array()
             .items(
-              Joi.string().valid('admin', 'form-publisher', 'form-creator')
+              Joi.string().valid(
+                Roles.Admin,
+                'form-publisher',
+                Roles.FormCreator
+              )
             )
             .optional()
         }).allow(null)

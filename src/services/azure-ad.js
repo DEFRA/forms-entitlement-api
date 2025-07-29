@@ -2,6 +2,7 @@ import { ClientSecretCredential } from '@azure/identity'
 import Boom from '@hapi/boom'
 import { Client } from '@microsoft/microsoft-graph-client'
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js'
+import { StatusCodes } from 'http-status-codes'
 
 import { config } from '~/src/config/index.js'
 import {
@@ -14,6 +15,37 @@ import { createLogger } from '~/src/helpers/logging/logger.js'
 const logger = createLogger()
 
 /**
+ * Check if error indicates a 404 Not Found condition
+ * @param {string|undefined} errorCode - Graph API error code
+ * @param {number|undefined} statusCode - HTTP status code
+ * @returns {boolean} True if this is a 404 error
+ */
+function isNotFoundError(errorCode, statusCode) {
+  return (
+    statusCode === StatusCodes.NOT_FOUND ||
+    errorCode === GRAPH_ERROR_CODES.REQUEST_RESOURCE_NOT_FOUND ||
+    errorCode === GRAPH_ERROR_CODES.RESOURCE_NOT_FOUND ||
+    errorCode === GRAPH_ERROR_CODES.NOT_FOUND
+  )
+}
+
+/**
+ * Check if error indicates a 403 Forbidden condition
+ * @param {string|undefined} errorCode - Graph API error code
+ * @param {number|undefined} statusCode - HTTP status code
+ * @returns {boolean} True if this is a 403 error
+ */
+function isForbiddenError(errorCode, statusCode) {
+  return (
+    statusCode === StatusCodes.FORBIDDEN ||
+    errorCode === GRAPH_ERROR_CODES.AUTHORIZATION_REQUEST_DENIED ||
+    errorCode === GRAPH_ERROR_CODES.ERROR_ACCESS_DENIED ||
+    errorCode === GRAPH_ERROR_CODES.ACCESS_DENIED ||
+    errorCode === GRAPH_ERROR_CODES.ACCESS_DENIED_LOWER
+  )
+}
+
+/**
  * Convert Microsoft Graph SDK errors to appropriate Boom errors
  * @param {any} error - Graph SDK error
  * @param {string} operation - Description of the operation that failed
@@ -23,26 +55,13 @@ function handleGraphError(error, operation) {
   const errorCode = error.code ?? error.error?.code
   const statusCode = error.statusCode ?? error.status
 
-  // 404 Not Found
-  if (
-    statusCode === 404 ||
-    errorCode === GRAPH_ERROR_CODES.REQUEST_RESOURCE_NOT_FOUND ||
-    errorCode === GRAPH_ERROR_CODES.RESOURCE_NOT_FOUND ||
-    errorCode === GRAPH_ERROR_CODES.NOT_FOUND
-  ) {
+  if (isNotFoundError(errorCode, statusCode)) {
     throw Boom.notFound(
       `${HTTP_RESPONSE_MESSAGES.USER_NOT_FOUND}: ${operation}`
     )
   }
 
-  // 403 Forbidden - insufficient privileges
-  if (
-    statusCode === 403 ||
-    errorCode === GRAPH_ERROR_CODES.AUTHORIZATION_REQUEST_DENIED ||
-    errorCode === GRAPH_ERROR_CODES.ERROR_ACCESS_DENIED ||
-    errorCode === GRAPH_ERROR_CODES.ACCESS_DENIED ||
-    errorCode === GRAPH_ERROR_CODES.ACCESS_DENIED_LOWER
-  ) {
+  if (isForbiddenError(errorCode, statusCode)) {
     throw Boom.forbidden(
       `${HTTP_RESPONSE_MESSAGES.PERMISSION_DENIED}: ${operation}`
     )
@@ -130,9 +149,9 @@ class AzureAdService {
    * @returns {Promise<AzureUser>} User details from Azure AD
    */
   async getUserByEmail(email) {
-    try {
-      logger.info(`[azureGetUserByEmail] Looking up user by email: ${email}`)
+    logger.info(`[azureGetUserByEmail] Looking up user by email: ${email}`)
 
+    try {
       const user = await this.graphClient
         .api(`/users/${email}`)
         .select('id,givenName,surname,displayName,mail,userPrincipalName')
@@ -157,8 +176,7 @@ class AzureAdService {
       logger.error(
         `[azureGetUserByEmail] Failed to find user by email ${email}: ${getErrorMessage(error)}`
       )
-
-      handleGraphError(error, `looking up user by email ${email}`)
+      return handleGraphError(error, 'looking up user by email')
     }
   }
 
@@ -168,9 +186,9 @@ class AzureAdService {
    * @returns {Promise<AzureUser>} User details from Azure AD
    */
   async validateUser(userId) {
-    try {
-      logger.info(`[azureValidateUser] Validating user: ${userId}`)
+    logger.info(`[azureValidateUser] Validating user: ${userId}`)
 
+    try {
       const user = await this.graphClient
         .api(`/users/${userId}`)
         .select('id,givenName,surname,displayName,mail,userPrincipalName')
@@ -195,8 +213,7 @@ class AzureAdService {
       logger.error(
         `[azureValidateUser] Failed to validate user ${userId}: ${getErrorMessage(error)}`
       )
-
-      handleGraphError(error, `validating user ${userId}`)
+      return handleGraphError(error, `validating user ${userId}`)
     }
   }
 }
