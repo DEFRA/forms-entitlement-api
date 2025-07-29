@@ -74,24 +74,23 @@ export async function getUser(userId) {
 }
 
 /**
- * Add a user with Azure AD validation
- * @param {string} userId
+ * Add a user with Azure AD validation by email
+ * @param {string} email - The user's email address
  * @param {string[]} roles
  */
-export async function addUser(userId, roles) {
-  logger.info(`Adding user with userID '${userId}'`)
+export async function addUser(email, roles) {
+  logger.info(`Adding user with email '${email}'`)
 
   const session = client.startSession()
 
   try {
-    // Always validate users against Azure AD
     const azureAdService = getAzureAdService()
-    await azureAdService.validateUser(userId)
-    logger.info(`User ${userId} validated in Azure AD`)
+    const azureUser = await azureAdService.getUserByEmail(email)
+    logger.info(`User ${email} found in Azure AD with ID: ${azureUser.id}`)
 
     await session.withTransaction(async () => {
       const user = {
-        userId,
+        userId: azureUser.id,
         roles,
         scopes: mapScopesToRoles(roles)
       }
@@ -100,14 +99,18 @@ export async function addUser(userId, roles) {
       return newUserEntity
     })
 
-    logger.info(`Added user with userID '${userId}'`)
+    logger.info(`Added user with email '${email}' (Azure ID: ${azureUser.id})`)
 
     return {
-      id: userId,
+      id: azureUser.id,
+      email: azureUser.email,
+      displayName: azureUser.displayName,
       status: 'success'
     }
   } catch (err) {
-    logger.error(`[addUser] Failed to add user - ${getErrorMessage(err)}`)
+    logger.error(
+      `[addUser] Failed to add user with email '${email}' - ${getErrorMessage(err)}`
+    )
 
     throw err
   } finally {
@@ -201,7 +204,6 @@ export async function syncAdminUsersFromGroup() {
   const session = client.startSession()
 
   try {
-    // Get all members of the role editor group from Azure AD
     const azureAdService = getAzureAdService()
     const groupMembers = await azureAdService.getGroupMembers(roleEditorGroupId)
 
@@ -220,10 +222,8 @@ export async function syncAdminUsersFromGroup() {
       for (const member of groupMembers) {
         try {
           try {
-            // Check if user already exists
             const existingUser = await get(member.id)
 
-            // If user exists but doesn't have admin role, update them
             if (existingUser.roles && !existingUser.roles.includes('admin')) {
               const updatedRoles = [
                 ...new Set([...existingUser.roles, 'admin'])
@@ -251,7 +251,6 @@ export async function syncAdminUsersFromGroup() {
               )
             }
           } catch {
-            // User doesn't exist, create them with admin role
             const user = {
               userId: member.id,
               roles: ['admin'],
@@ -273,7 +272,6 @@ export async function syncAdminUsersFromGroup() {
               ': ' +
               getErrorMessage(err)
           )
-          // Continue with other users even if one fails
         }
       }
     })
@@ -388,44 +386,6 @@ export async function migrateUsersFromAzureGroup(roles = ['form-creator']) {
 
 /**
  * @import { UserEntitlementDocument } from '~/src/api/types.js'
+ * @import { MigrationResult, MigratedUser, FailedUser, SkippedUser } from '~/src/api/types.js'
  * @import { WithId } from 'mongodb'
- */
-
-/**
- * @typedef {object} MigrationResult
- * @property {string} status - Migration status
- * @property {object} summary - Migration summary
- * @property {number} summary.total - Total users processed
- * @property {number} summary.successful - Successfully migrated users
- * @property {number} summary.failed - Failed migration users
- * @property {number} summary.skipped - Skipped users
- * @property {object} results - Detailed results
- * @property {MigratedUser[]} results.successful - Successfully migrated users
- * @property {FailedUser[]} results.failed - Failed migration users
- * @property {SkippedUser[]} results.skipped - Skipped users
- */
-
-/**
- * @typedef {object} MigratedUser
- * @property {string} userId - Azure AD user ID
- * @property {string} displayName - User display name
- * @property {string} email - User email
- * @property {string[]} roles - Assigned roles
- * @property {string[]} scopes - Assigned scopes
- */
-
-/**
- * @typedef {object} FailedUser
- * @property {string} userId - Azure AD user ID
- * @property {string} displayName - User display name
- * @property {string} email - User email
- * @property {string} error - Error message
- */
-
-/**
- * @typedef {object} SkippedUser
- * @property {string} userId - Azure AD user ID
- * @property {string} displayName - User display name
- * @property {string} email - User email
- * @property {string} reason - Reason for skipping
  */

@@ -46,10 +46,19 @@ export default [
     handler: async (request, h) => {
       try {
         const result = await addUser(
-          request.payload.userId,
+          request.payload.email,
           request.payload.roles
         )
-        return h.response({ message: result.status, id: result.id })
+
+        const createdUser = await getUser(result.id)
+
+        return h.response({
+          message: result.status,
+          id: result.id,
+          email: result.email,
+          displayName: result.displayName,
+          entity: createdUser
+        })
       } catch (error) {
         const errorMessage = getErrorMessage(error)
 

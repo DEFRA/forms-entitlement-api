@@ -1,35 +1,13 @@
 import { ClientSecretCredential } from '@azure/identity'
+import Boom from '@hapi/boom'
 import { Client } from '@microsoft/microsoft-graph-client'
+import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js'
 
 import { config } from '~/src/config/index.js'
 import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 
 const logger = createLogger()
-
-/**
- * Simple auth provider that implements the required interface
- */
-class SimpleAuthProvider {
-  /**
-   * Create SimpleAuthProvider instance
-   * @param {ClientSecretCredential} credential - The Azure credential
-   */
-  constructor(credential) {
-    this.credential = credential
-  }
-
-  /**
-   * Get access token for Microsoft Graph
-   * @returns {Promise<string>} The access token
-   */
-  async getAccessToken() {
-    const tokenResponse = await this.credential.getToken(
-      'https://graph.microsoft.com/.default'
-    )
-    return tokenResponse.token
-  }
-}
 
 /**
  * Azure AD service for interacting with Microsoft Graph API
@@ -39,25 +17,24 @@ class AzureAdService {
    * Create Azure AD service instance
    */
   constructor() {
-    this.clientId = config.get('azure.clientId')
-    this.clientSecret = config.get('azure.clientSecret')
-    this.tenantId = config.get('azure.tenantId')
+    const clientId = config.get('azure.clientId')
+    const clientSecret = config.get('azure.clientSecret')
+    const tenantId = config.get('azure.tenantId')
 
-    if (!this.clientSecret) {
+    if (!clientSecret) {
       throw new Error('Azure client secret is required for Graph API access')
     }
 
-    this.credential = new ClientSecretCredential(
-      this.tenantId,
-      this.clientId,
-      this.clientSecret
+    const credential = new ClientSecretCredential(
+      tenantId,
+      clientId,
+      clientSecret
     )
-
-    this.authProvider = new SimpleAuthProvider(this.credential)
-
-    this.graphClient = Client.initWithMiddleware({
-      authProvider: this.authProvider
+    const authProvider = new TokenCredentialAuthenticationProvider(credential, {
+      scopes: ['https://graph.microsoft.com/.default']
     })
+
+    this.graphClient = Client.initWithMiddleware({ authProvider })
   }
 
   /**
@@ -93,12 +70,60 @@ class AzureAdService {
         `[azureFetchGroupMembers] Found ${users.length} users in group ${groupId}`
       )
       return users
-    } catch (error_) {
+    } catch (error) {
       logger.error(
-        `[azureFetchGroupMembersError] Failed to fetch group members for ${groupId}: ${getErrorMessage(error_)}`
+        `[azureFetchGroupMembers] Failed to fetch group members for ${groupId}: ${getErrorMessage(error)}`
       )
-      throw new Error(
-        `Failed to fetch group members: ${getErrorMessage(error_)}`
+      throw Boom.internal(
+        `Failed to fetch group members: ${getErrorMessage(error)}`
+      )
+    }
+  }
+
+  /**
+   * Look up a user by email address and get their Azure AD details
+   * @param {string} email - The user's email address
+   * @returns {Promise<AzureUser>} User details from Azure AD
+   */
+  async getUserByEmail(email) {
+    try {
+      logger.info(`[azureGetUserByEmail] Looking up user by email: ${email}`)
+
+      const user = await this.graphClient
+        .api(`/users/${email}`)
+        .select('id,givenName,surname,displayName,mail,userPrincipalName')
+        .get()
+
+      const firstName = user.givenName
+      const lastName = user.surname
+      const displayName =
+        firstName && lastName
+          ? `${firstName} ${lastName}`
+          : (user.displayName ?? '')
+
+      const foundUser = {
+        id: user.id,
+        displayName,
+        email: user.mail ?? user.userPrincipalName
+      }
+
+      logger.info(`[azureGetUserByEmail] Found user: ${user.id} (${email})`)
+      return foundUser
+    } catch (error) {
+      logger.error(
+        `[azureGetUserByEmail] Failed to find user by email ${email}: ${getErrorMessage(error)}`
+      )
+
+      if (
+        error &&
+        typeof error === 'object' &&
+        /** @type {any} */ (error).status === 404
+      ) {
+        throw Boom.notFound(`User not found in Azure AD: ${email}`)
+      }
+
+      throw Boom.internal(
+        `Failed to look up user by email: ${getErrorMessage(error)}`
       )
     }
   }
@@ -114,41 +139,48 @@ class AzureAdService {
 
       const user = await this.graphClient
         .api(`/users/${userId}`)
-        .select('id,displayName,mail,userPrincipalName')
+        .select('id,givenName,surname,displayName,mail,userPrincipalName')
         .get()
+
+      const firstName = user.givenName
+      const lastName = user.surname
+      const displayName =
+        firstName && lastName
+          ? `${firstName} ${lastName}`
+          : (user.displayName ?? '')
 
       const validatedUser = {
         id: user.id,
-        displayName: user.displayName,
+        displayName,
         email: user.mail ?? user.userPrincipalName
       }
 
       logger.info(`[azureValidateUser] User validated: ${userId}`)
       return validatedUser
-    } catch (error_) {
+    } catch (error) {
+      logger.error(
+        `[azureValidateUser] Failed to validate user ${userId}: ${getErrorMessage(error)}`
+      )
+
       if (
-        error_ &&
-        typeof error_ === 'object' &&
-        'code' in error_ &&
-        error_.code === 'Request_ResourceNotFound'
+        error &&
+        typeof error === 'object' &&
+        /** @type {any} */ (error).status === 404
       ) {
-        logger.warn(`[azureUserNotFound] User not found in Azure AD: ${userId}`)
-        throw new Error(`User not found in Azure AD: ${userId}`)
+        throw Boom.notFound(`User not found in Azure AD: ${userId}`)
       }
 
-      logger.error(
-        `[azureValidateUserError] Failed to validate user ${userId}: ${getErrorMessage(error_)}`
+      throw Boom.internal(
+        `Failed to validate user in Azure AD: ${getErrorMessage(error)}`
       )
-      throw new Error(`Failed to validate user: ${getErrorMessage(error_)}`)
     }
   }
 }
 
-// Create singleton instance
 let azureAdService = null
 
 /**
- * Get the Azure AD service singleton instance
+ * Get the Azure AD service instance
  * @returns {AzureAdService} The Azure AD service instance
  */
 export function getAzureAdService() {
@@ -159,6 +191,6 @@ export function getAzureAdService() {
 /**
  * @typedef {object} AzureUser
  * @property {string} id - Azure AD object ID
- * @property {string} displayName - User's display name
+ * @property {string} displayName - User's display name (givenName + surname)
  * @property {string} email - User's email address
  */
