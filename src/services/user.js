@@ -86,11 +86,13 @@ export async function addUser(email, roles) {
   try {
     const azureAdService = getAzureAdService()
     const azureUser = await azureAdService.getUserByEmail(email)
-    logger.info(`User ${email} found in Azure AD with ID: ${azureUser.id}`)
+    logger.info(`User found in Azure AD with ID: ${azureUser.id}`)
 
     await session.withTransaction(async () => {
       const user = {
         userId: azureUser.id,
+        email: azureUser.email,
+        displayName: azureUser.displayName,
         roles,
         scopes: mapScopesToRoles(roles)
       }
@@ -99,7 +101,7 @@ export async function addUser(email, roles) {
       return newUserEntity
     })
 
-    logger.info(`Added user with email '${email}' (Azure ID: ${azureUser.id})`)
+    logger.info(`Added user with Azure ID: ${azureUser.id}`)
 
     return {
       id: azureUser.id,
@@ -108,9 +110,7 @@ export async function addUser(email, roles) {
       status: 'success'
     }
   } catch (err) {
-    logger.error(
-      `[addUser] Failed to add user with email '${email}' - ${getErrorMessage(err)}`
-    )
+    logger.error(`[addUser] Failed to add user - ${getErrorMessage(err)}`)
 
     throw err
   } finally {
