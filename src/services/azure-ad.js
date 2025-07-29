@@ -4,10 +4,54 @@ import { Client } from '@microsoft/microsoft-graph-client'
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js'
 
 import { config } from '~/src/config/index.js'
+import {
+  GRAPH_ERROR_CODES,
+  HTTP_RESPONSE_MESSAGES
+} from '~/src/helpers/azure-error-constants.js'
 import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 
 const logger = createLogger()
+
+/**
+ * Convert Microsoft Graph SDK errors to appropriate Boom errors
+ * @param {any} error - Graph SDK error
+ * @param {string} operation - Description of the operation that failed
+ * @returns {never} Always throws a Boom error
+ */
+function handleGraphError(error, operation) {
+  const errorCode = error.code ?? error.error?.code
+  const statusCode = error.statusCode ?? error.status
+
+  // 404 Not Found
+  if (
+    statusCode === 404 ||
+    errorCode === GRAPH_ERROR_CODES.REQUEST_RESOURCE_NOT_FOUND ||
+    errorCode === GRAPH_ERROR_CODES.RESOURCE_NOT_FOUND ||
+    errorCode === GRAPH_ERROR_CODES.NOT_FOUND
+  ) {
+    throw Boom.notFound(
+      `${HTTP_RESPONSE_MESSAGES.USER_NOT_FOUND}: ${operation}`
+    )
+  }
+
+  // 403 Forbidden - insufficient privileges
+  if (
+    statusCode === 403 ||
+    errorCode === GRAPH_ERROR_CODES.AUTHORIZATION_REQUEST_DENIED ||
+    errorCode === GRAPH_ERROR_CODES.ERROR_ACCESS_DENIED ||
+    errorCode === GRAPH_ERROR_CODES.ACCESS_DENIED ||
+    errorCode === GRAPH_ERROR_CODES.ACCESS_DENIED_LOWER
+  ) {
+    throw Boom.forbidden(
+      `${HTTP_RESPONSE_MESSAGES.PERMISSION_DENIED}: ${operation}`
+    )
+  }
+
+  throw Boom.internal(
+    `Graph API error: ${operation} - ${getErrorMessage(error)}`
+  )
+}
 
 /**
  * Azure AD service for interacting with Microsoft Graph API
@@ -114,17 +158,7 @@ class AzureAdService {
         `[azureGetUserByEmail] Failed to find user by email ${email}: ${getErrorMessage(error)}`
       )
 
-      if (
-        error &&
-        typeof error === 'object' &&
-        /** @type {any} */ (error).status === 404
-      ) {
-        throw Boom.notFound(`User not found in Azure AD: ${email}`)
-      }
-
-      throw Boom.internal(
-        `Failed to look up user by email: ${getErrorMessage(error)}`
-      )
+      handleGraphError(error, `looking up user by email ${email}`)
     }
   }
 
@@ -162,17 +196,7 @@ class AzureAdService {
         `[azureValidateUser] Failed to validate user ${userId}: ${getErrorMessage(error)}`
       )
 
-      if (
-        error &&
-        typeof error === 'object' &&
-        /** @type {any} */ (error).status === 404
-      ) {
-        throw Boom.notFound(`User not found in Azure AD: ${userId}`)
-      }
-
-      throw Boom.internal(
-        `Failed to validate user in Azure AD: ${getErrorMessage(error)}`
-      )
+      handleGraphError(error, `validating user ${userId}`)
     }
   }
 }

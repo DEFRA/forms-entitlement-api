@@ -191,8 +191,9 @@ describe('Migration routes', () => {
       })
 
       expect(response.statusCode).toEqual(serverErrorStatusCode)
-      expect(response.result.message).toBe('Migration failed')
-      expect(response.result.error).toBe('Azure AD service unavailable')
+      expect(response.result).toBeDefined()
+      // @ts-expect-error - Boom error response structure
+      expect(response.result.message).toBe('An internal server error occurred')
     })
 
     test('should validate role values', async () => {

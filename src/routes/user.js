@@ -1,6 +1,5 @@
 import Boom from '@hapi/boom'
 
-import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { RoleDetails, Roles } from '~/src/repositories/roles.js'
 import {
   createUserSchema,
@@ -60,17 +59,11 @@ export default [
           entity: createdUser
         })
       } catch (error) {
-        const errorMessage = getErrorMessage(error)
-
-        if (errorMessage.includes('Insufficient privileges')) {
-          throw Boom.forbidden('Permission denied')
+        if (Boom.isBoom(error)) {
+          throw error
         }
 
-        if (errorMessage.includes('User not found')) {
-          throw Boom.notFound('User not found')
-        }
-
-        throw error
+        throw Boom.internal('An error occurred while processing your request')
       }
     },
     options: {
@@ -93,17 +86,11 @@ export default [
         )
         return h.response({ message: result.status, id: result.id })
       } catch (error) {
-        const errorMessage = getErrorMessage(error)
-
-        if (errorMessage.includes('Insufficient privileges')) {
-          throw Boom.forbidden('Permission denied')
+        if (Boom.isBoom(error)) {
+          throw error
         }
 
-        if (errorMessage.includes('User not found')) {
-          throw Boom.notFound('User not found')
-        }
-
-        throw error
+        throw Boom.internal('An error occurred while processing your request')
       }
     },
     options: {

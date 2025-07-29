@@ -186,6 +186,75 @@ export async function deleteUser(userId) {
 }
 
 /**
+ * Check if user exists and return user data, or null if not found
+ * @param {string} userId - User ID to check
+ * @returns {Promise<Partial<UserEntitlementDocument>|null>} User data or null if not found
+ */
+async function findExistingUser(userId) {
+  try {
+    return await get(userId)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Process a single admin user - create if doesn't exist, add admin role if missing
+ * @param {AzureUser} member - Azure AD group member
+ * @param {import('mongodb').ClientSession} session - MongoDB session for transaction
+ */
+async function processAdminUser(member, session) {
+  const existingUser = await findExistingUser(member.id)
+
+  if (existingUser) {
+    if (existingUser.roles && !existingUser.roles.includes('admin')) {
+      const updatedRoles = [...new Set([...existingUser.roles, 'admin'])]
+      const user = {
+        userId: member.id,
+        roles: updatedRoles,
+        scopes: mapScopesToRoles(updatedRoles)
+      }
+      await update(member.id, user, session)
+      logger.info(
+        `Updated user with admin privileges: ${member.id} (${member.displayName})`
+      )
+    } else {
+      logger.info(
+        `User already has admin privileges: ${member.id} (${member.displayName})`
+      )
+    }
+  } else {
+    // User doesn't exist, create them with admin role
+    const user = {
+      userId: member.id,
+      roles: ['admin'],
+      scopes: mapScopesToRoles(['admin'])
+    }
+    await create(user, session)
+    logger.info(`Created admin user: ${member.id} (${member.displayName})`)
+  }
+}
+
+/**
+ * Process all admin users from a group with transaction support
+ * @param {AzureUser[]} groupMembers - Array of group members from Azure AD
+ * @param {import('mongodb').ClientSession} session - MongoDB session for transaction
+ */
+async function processAllAdminUsers(groupMembers, session) {
+  await session.withTransaction(async () => {
+    for (const member of groupMembers) {
+      try {
+        await processAdminUser(member, session)
+      } catch (err) {
+        logger.error(
+          `Failed to sync admin user ${member.id}: ${getErrorMessage(err)}`
+        )
+      }
+    }
+  })
+}
+
+/**
  * Sync admin users from Azure AD role editor group
  * Called on service startup to ensure admin access based on AD group membership
  */
@@ -198,7 +267,7 @@ export async function syncAdminUsersFromGroup() {
   }
 
   logger.info(
-    'Syncing admin users from role editor group: ' + roleEditorGroupId
+    `Syncing admin users from role editor group: ${roleEditorGroupId}`
   )
 
   const session = client.startSession()
@@ -212,74 +281,14 @@ export async function syncAdminUsersFromGroup() {
       return
     }
 
-    logger.info(
-      'Found ' +
-        groupMembers.length.toString() +
-        ' members in role editor group'
-    )
+    logger.info(`Found ${groupMembers.length} members in role editor group`)
 
-    await session.withTransaction(async () => {
-      for (const member of groupMembers) {
-        try {
-          try {
-            const existingUser = await get(member.id)
-
-            if (existingUser.roles && !existingUser.roles.includes('admin')) {
-              const updatedRoles = [
-                ...new Set([...existingUser.roles, 'admin'])
-              ]
-              const user = {
-                userId: member.id,
-                roles: updatedRoles,
-                scopes: mapScopesToRoles(updatedRoles)
-              }
-              await update(member.id, user, session)
-              logger.info(
-                'Updated user with admin privileges: ' +
-                  member.id +
-                  ' (' +
-                  member.displayName +
-                  ')'
-              )
-            } else {
-              logger.info(
-                'User already has admin privileges: ' +
-                  member.id +
-                  ' (' +
-                  member.displayName +
-                  ')'
-              )
-            }
-          } catch {
-            const user = {
-              userId: member.id,
-              roles: ['admin'],
-              scopes: mapScopesToRoles(['admin'])
-            }
-            await create(user, session)
-            logger.info(
-              'Created admin user: ' +
-                member.id +
-                ' (' +
-                member.displayName +
-                ')'
-            )
-          }
-        } catch (err) {
-          logger.error(
-            'Failed to sync admin user ' +
-              member.id +
-              ': ' +
-              getErrorMessage(err)
-          )
-        }
-      }
-    })
+    await processAllAdminUsers(groupMembers, session)
 
     logger.info('Admin user sync completed successfully')
   } catch (err) {
     logger.error(
-      'Failed to sync admin users from group: ' + getErrorMessage(err)
+      `Failed to sync admin users from group: ${getErrorMessage(err)}`
     )
     throw err
   } finally {
@@ -302,9 +311,7 @@ export async function migrateUsersFromAzureGroup(roles = ['form-creator']) {
   try {
     const azureUsers = await azureAdService.getGroupMembers(roleEditorGroupId)
     logger.info(
-      'Found ' +
-        azureUsers.length.toString() +
-        ' users in role editor group for migration'
+      `Found ${azureUsers.length} users in role editor group for migration`
     )
 
     /** @type {{successful: MigratedUser[], failed: FailedUser[], skipped: SkippedUser[]}} */
@@ -317,8 +324,9 @@ export async function migrateUsersFromAzureGroup(roles = ['form-creator']) {
     await session.withTransaction(async () => {
       for (const azureUser of azureUsers) {
         try {
-          try {
-            await get(azureUser.id)
+          const existingUser = await findExistingUser(azureUser.id)
+
+          if (existingUser) {
             logger.info(`User ${azureUser.id} already exists, skipping`)
             results.skipped.push({
               userId: azureUser.id,
@@ -327,8 +335,6 @@ export async function migrateUsersFromAzureGroup(roles = ['form-creator']) {
               reason: 'User already exists'
             })
             continue
-          } catch {
-            // User doesn't exist, proceed with creation, this is expected for new users
           }
 
           const user = {
@@ -387,5 +393,6 @@ export async function migrateUsersFromAzureGroup(roles = ['form-creator']) {
 /**
  * @import { UserEntitlementDocument } from '~/src/api/types.js'
  * @import { MigrationResult, MigratedUser, FailedUser, SkippedUser } from '~/src/api/types.js'
+ * @import { AzureUser } from '~/src/services/azure-ad.js'
  * @import { WithId } from 'mongodb'
  */

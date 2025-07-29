@@ -28,12 +28,7 @@ export default [
         }
 
         request.logger.error(`User migration failed: ${getErrorMessage(error)}`)
-        return h
-          .response({
-            message: 'Migration failed',
-            error: getErrorMessage(error)
-          })
-          .code(500)
+        throw Boom.internal('An error occurred while processing your request')
       }
     },
     options: {
