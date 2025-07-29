@@ -1,7 +1,7 @@
 /**
- * @typedef {{userId: string, roles: string[], scopes: string[]}} UserEntitlementDocument
+ * @typedef {{userId: string, displayName: string, email: string, roles: string[], scopes: string[]}} UserEntitlementDocument
  * @typedef {{ userId: string }} UserById
- * @typedef {{ userId: string, roles: string[] }} UserEntitlementCreateRequest
+ * @typedef {{ email: string, roles: string[] }} UserEntitlementCreateRequest
  * @typedef {{ roles: string[] }} UserEntitlementUpdateRequest
  * @typedef {Request<{ Server: { db: Db }, Payload: UserEntitlementCreateRequest }>} CreateUserRequest
  * @typedef {Request<{ Server: { db: Db }, Params: UserById, Payload: UserEntitlementUpdateRequest }>} UpdateUserRequest

@@ -9,6 +9,7 @@ import {
   remove,
   update
 } from '~/src/repositories/user-repository.js'
+import { getAzureAdService } from '~/src/services/azure-ad.js'
 
 export const logger = createLogger()
 
@@ -18,7 +19,13 @@ export const logger = createLogger()
  * @returns {UserEntitlementDocument}
  */
 export function mapUser(document) {
-  if (!document.userId || !document.roles || !document.scopes) {
+  if (
+    !document.userId ||
+    !document.roles ||
+    !document.scopes ||
+    !document.email ||
+    !document.displayName
+  ) {
     throw Error(
       'User is malformed in the database. Expected fields are missing.'
     )
@@ -26,6 +33,8 @@ export function mapUser(document) {
 
   return {
     userId: document.userId,
+    email: document.email,
+    displayName: document.displayName,
     roles: document.roles,
     scopes: document.scopes
   }
@@ -73,18 +82,21 @@ export async function getUser(userId) {
 
 /**
  * Add a user
- * @param {string} userId
+ * @param {string} email
  * @param {string[]} roles
  */
-export async function addUser(userId, roles) {
-  logger.info(`Adding user with userID '${userId}'`)
+export async function addUser(email, roles) {
+  logger.info(`Adding user`)
+
+  const azureAdService = getAzureAdService()
+  const azureUser = await azureAdService.validateUserByEmail(email)
 
   const session = client.startSession()
 
   try {
     await session.withTransaction(async () => {
       const user = {
-        userId,
+        ...azureUser,
         roles,
         scopes: mapScopesToRoles(roles)
       }
@@ -94,10 +106,10 @@ export async function addUser(userId, roles) {
       return newUserEntity
     })
 
-    logger.info(`Added user with userID '${userId}'`)
+    logger.info(`Added user with userID '${azureUser.userId}'`)
 
     return {
-      id: userId,
+      id: azureUser.userId,
       status: 'success'
     }
   } catch (err) {
@@ -117,12 +129,15 @@ export async function addUser(userId, roles) {
 export async function updateUser(userId, roles) {
   logger.info(`Updating user with userID '${userId}'`)
 
+  const azureAdService = getAzureAdService()
+  const azureUser = await azureAdService.validateUserById(userId)
+
   const session = client.startSession()
 
   try {
     await session.withTransaction(async () => {
       const user = {
-        userId,
+        ...azureUser,
         roles,
         scopes: mapScopesToRoles(roles)
       }

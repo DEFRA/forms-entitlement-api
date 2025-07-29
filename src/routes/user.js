@@ -41,10 +41,7 @@ export default [
      * @param {CreateUserRequest} request
      */
     handler: async (request, h) => {
-      const result = await addUser(
-        request.payload.userId,
-        request.payload.roles
-      )
+      const result = await addUser(request.payload.email, request.payload.roles)
       return h.response({ message: result.status, id: result.id })
     },
     options: {

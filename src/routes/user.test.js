@@ -75,7 +75,7 @@ describe('User route', () => {
           method: 'POST',
           url: '/users',
           payload: {
-            userId: mockFormCreatorUser.userId,
+            email: mockFormCreatorUser.email,
             roles: mockFormCreatorUser.roles
           },
           auth

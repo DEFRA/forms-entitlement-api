@@ -9,7 +9,7 @@ export const userIdSchema = Joi.object().keys({
 
 // Create user schema
 export const createUserSchema = Joi.object().keys({
-  userId: Joi.string().required(),
+  email: Joi.string().required(),
   roles: Joi.array()
     .items(Joi.string().valid(Roles.Admin, Roles.FormCreator))
     .required()

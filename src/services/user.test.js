@@ -16,6 +16,7 @@ import {
   remove,
   update
 } from '~/src/repositories/user-repository.js'
+import { getAzureAdService } from '~/src/services/azure-ad.js'
 import {
   addUser,
   deleteUser,
@@ -26,9 +27,18 @@ import {
 } from '~/src/services/user.js'
 
 jest.mock('~/src/repositories/user-repository.js')
+jest.mock('~/src/services/azure-ad.js')
 jest.mock('~/src/mongo.js')
 
 jest.useFakeTimers().setSystemTime(new Date('2020-01-01'))
+
+const validUser = {
+  userId: '12345',
+  displayName: 'John Smith',
+  email: 'john.smith@site.com',
+  roles: ['admin'],
+  scopes: ['form-creator', 'form-publish', 'user-edit']
+}
 
 describe('User service', () => {
   beforeAll(async () => {
@@ -37,6 +47,12 @@ describe('User service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.mocked(getAzureAdService).mockImplementation(() => {
+      return {
+        validateUserByEmail: jest.fn().mockResolvedValue(validUser),
+        validateUserById: jest.fn().mockResolvedValue(validUser)
+      }
+    })
   })
 
   describe('mapUser', () => {
@@ -125,7 +141,7 @@ describe('User service', () => {
       const rolesToAdd = [Roles.Admin]
       const result = await addUser(mockUserId1, rolesToAdd)
 
-      expect(result.id).toBe(mockUserId1)
+      expect(result.id).toBe('12345')
       expect(result.status).toBe('success')
     })
 

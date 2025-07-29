@@ -2,12 +2,16 @@ import { ObjectId } from 'mongodb'
 
 export const mockFormCreatorUser = {
   userId: 'user-id-creator',
+  displayName: 'John Smith',
+  email: 'john.smith@site.com',
   roles: ['form-creator'],
   scopes: ['form-read', 'form-edit']
 }
 
 export const mockAdminUser = {
   userId: 'user-id-admin',
+  displayName: 'Admin Jones',
+  email: 'admin.jones@site.com',
   roles: ['admin'],
   scopes: [
     'form-read',
