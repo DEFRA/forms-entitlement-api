@@ -1,3 +1,5 @@
+import Boom from '@hapi/boom'
+
 import { createServer } from '~/src/api/server.js'
 import { migrateUsersFromAzureGroup } from '~/src/services/user.js'
 import { auth } from '~/test/fixtures/auth.js'
@@ -194,6 +196,23 @@ describe('Migration routes', () => {
       expect(response.result).toBeDefined()
       // @ts-expect-error - Boom error response structure
       expect(response.result.message).toBe('An internal server error occurred')
+    })
+
+    test('should re-throw Boom errors without modification', async () => {
+      const boomError = Boom.badRequest('Invalid Azure group configuration')
+
+      jest.mocked(migrateUsersFromAzureGroup).mockRejectedValue(boomError)
+
+      const response = await server.inject({
+        method: 'POST',
+        url: '/users/migrate',
+        auth
+      })
+
+      expect(response.statusCode).toBe(400)
+      expect(response.result).toBeDefined()
+      // @ts-expect-error - Boom error response structure
+      expect(response.result.message).toBe('Invalid Azure group configuration')
     })
 
     test('should validate role values', async () => {

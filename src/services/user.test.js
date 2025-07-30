@@ -6,7 +6,7 @@ import {
   mockUserList,
   mockUserListWithIds
 } from '~/src/api/__stubs__/users.js'
-import { prepareDb } from '~/src/mongo.js'
+import { client, prepareDb } from '~/src/mongo.js'
 import { Roles } from '~/src/repositories/roles.js'
 import { Scopes } from '~/src/repositories/scopes.js'
 import {
@@ -23,11 +23,31 @@ import {
   getAllUsers,
   getUser,
   mapUser,
+  mapUsers,
+  migrateUsersFromAzureGroup,
+  syncAdminUsersFromGroup,
   updateUser
 } from '~/src/services/user.js'
 
 jest.mock('~/src/repositories/user-repository.js')
-jest.mock('~/src/mongo.js')
+jest.mock('~/src/mongo.js', () => ({
+  client: {
+    startSession: jest.fn()
+  },
+  prepareDb: jest.fn()
+}))
+jest.mock('~/src/helpers/logging/logger.js', () => ({
+  createLogger: jest.fn(() => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn()
+  }))
+}))
+jest.mock('~/src/config/index.js', () => ({
+  config: {
+    get: jest.fn().mockReturnValue('test-group-id')
+  }
+}))
 
 jest.useFakeTimers().setSystemTime(new Date('2020-01-01'))
 
@@ -38,6 +58,17 @@ describe('User service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+
+    const mockSession = {
+      withTransaction: jest.fn((fn) => fn()),
+      endSession: jest.fn().mockResolvedValue(undefined),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      abortTransaction: jest.fn()
+    }
+
+    // @ts-expect-error - Mocking MongoDB session
+    jest.mocked(client.startSession).mockReturnValue(mockSession)
 
     const mockValidateUser = jest.fn().mockResolvedValue({
       id: 'test-user-id',
@@ -53,10 +84,24 @@ describe('User service', () => {
       })
     )
 
+    const mockGetGroupMembers = jest.fn().mockResolvedValue([
+      {
+        id: 'azure-user-1',
+        displayName: 'John Doe',
+        email: 'john.doe@defra.gov.uk'
+      },
+      {
+        id: 'azure-user-2',
+        displayName: 'Jane Smith',
+        email: 'jane.smith@defra.gov.uk'
+      }
+    ])
+
     jest.spyOn(azureAdModule, 'getAzureAdService').mockReturnValue(
       /** @type {any} */ ({
         validateUser: mockValidateUser,
-        getUserByEmail: mockGetUserByEmail
+        getUserByEmail: mockGetUserByEmail,
+        getGroupMembers: mockGetGroupMembers
       })
     )
   })
@@ -218,6 +263,88 @@ describe('User service', () => {
       })
 
       await expect(deleteUser('123')).rejects.toThrow('backend error')
+    })
+  })
+
+  describe('mapUsers', () => {
+    it('should map array of user documents', () => {
+      const result = mapUsers(mockUserListWithIds)
+
+      expect(result).toHaveLength(3)
+      expect(result).toEqual(mockUserList)
+    })
+
+    it('should handle empty array', () => {
+      const result = mapUsers([])
+
+      expect(result).toEqual([])
+    })
+
+    it('should throw if any user is malformed', () => {
+      const malformedUsers = [
+        mockUserListWithIds[0],
+        /** @type {WithId<Partial<UserEntitlementDocument>>} */ ({
+          userId: 'incomplete'
+        })
+      ]
+
+      expect(() => mapUsers(malformedUsers)).toThrow(
+        'User is malformed in the database. Expected fields are missing.'
+      )
+    })
+  })
+
+  describe('syncAdminUsersFromGroup', () => {
+    it('should handle missing roleEditorGroupId config', async () => {
+      const { config } = await import('~/src/config/index.js')
+      jest.mocked(config.get).mockReturnValue(null)
+
+      await syncAdminUsersFromGroup()
+
+      expect(get).not.toHaveBeenCalled()
+    })
+
+    it('should complete successfully with valid config', async () => {
+      // Ensure config returns valid group ID
+      const { config } = await import('~/src/config/index.js')
+      jest.mocked(config.get).mockReturnValue('test-group-id')
+
+      // Should complete without throwing
+      await expect(syncAdminUsersFromGroup()).resolves.toBeUndefined()
+    })
+  })
+
+  describe('migrateUsersFromAzureGroup', () => {
+    it('should migrate users successfully', async () => {
+      jest.mocked(get).mockRejectedValue(new Error('User not found'))
+      jest.mocked(create).mockResolvedValue({
+        acknowledged: true,
+        insertedId: new ObjectId()
+      })
+
+      const result = await migrateUsersFromAzureGroup([Roles.FormCreator])
+
+      expect(result.status).toBe('completed')
+      expect(result.summary.total).toBe(2)
+      expect(result.summary.successful).toBe(2)
+      expect(result.results.successful).toHaveLength(2)
+    })
+
+    it('should use default FormCreator role', async () => {
+      jest.mocked(get).mockRejectedValue(new Error('User not found'))
+      jest.mocked(create).mockResolvedValue({
+        acknowledged: true,
+        insertedId: new ObjectId()
+      })
+
+      await migrateUsersFromAzureGroup()
+
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          roles: [Roles.FormCreator]
+        }),
+        expect.any(Object)
+      )
     })
   })
 })

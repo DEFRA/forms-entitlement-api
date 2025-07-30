@@ -1,3 +1,5 @@
+import Boom from '@hapi/boom'
+
 import {
   mockAdminUser,
   mockFormCreatorUser
@@ -174,6 +176,132 @@ describe('User route', () => {
             }
           ]
         })
+      })
+    })
+  })
+
+  describe('Error handling', () => {
+    beforeEach(() => {
+      jest.clearAllMocks()
+    })
+
+    describe('POST /users', () => {
+      test('should return 500 when addUser fails with generic error', async () => {
+        jest
+          .mocked(addUser)
+          .mockRejectedValue(new Error('Database connection failed'))
+
+        const response = await server.inject({
+          method: 'POST',
+          url: '/users',
+          payload: {
+            email: 'test@defra.gov.uk',
+            roles: ['form-creator']
+          },
+          auth
+        })
+
+        expect(response.statusCode).toBe(500)
+        expect(response.result).toBeDefined()
+        // @ts-expect-error - Boom error response structure
+        expect(response.result.message).toBe(
+          'An internal server error occurred'
+        )
+      })
+
+      test('should re-throw Boom errors without modification', async () => {
+        const boomError = Boom.conflict('User already exists')
+
+        jest.mocked(addUser).mockRejectedValue(boomError)
+
+        const response = await server.inject({
+          method: 'POST',
+          url: '/users',
+          payload: {
+            email: 'test@defra.gov.uk',
+            roles: ['form-creator']
+          },
+          auth
+        })
+
+        expect(response.statusCode).toBe(409)
+        expect(response.result).toBeDefined()
+        // @ts-expect-error - Boom error response structure
+        expect(response.result.message).toBe('User already exists')
+      })
+
+      test('should return 500 when getUser fails after successful addUser', async () => {
+        jest.mocked(addUser).mockResolvedValue({
+          id: 'user-test-defra-gov-uk',
+          email: 'test@defra.gov.uk',
+          displayName: 'Test User',
+          status: 'success'
+        })
+
+        jest
+          .mocked(getUser)
+          .mockRejectedValue(new Error('Failed to retrieve user'))
+
+        const response = await server.inject({
+          method: 'POST',
+          url: '/users',
+          payload: {
+            email: 'test@defra.gov.uk',
+            roles: ['form-creator']
+          },
+          auth
+        })
+
+        expect(response.statusCode).toBe(500)
+        expect(response.result).toBeDefined()
+        // @ts-expect-error - Boom error response structure
+        expect(response.result.message).toBe(
+          'An internal server error occurred'
+        )
+      })
+    })
+
+    describe('PUT /users/{userId}', () => {
+      test('should return 500 when updateUser fails with generic error', async () => {
+        jest
+          .mocked(updateUser)
+          .mockRejectedValue(new Error('Database update failed'))
+
+        const response = await server.inject({
+          method: 'PUT',
+          url: '/users/123',
+          payload: {
+            roles: ['admin']
+          },
+          auth
+        })
+
+        expect(response.statusCode).toBe(500)
+        expect(response.result).toBeDefined()
+        // @ts-expect-error - Boom error response structure
+        expect(response.result.message).toBe(
+          'An internal server error occurred'
+        )
+      })
+
+      test('should re-throw Boom errors without modification', async () => {
+        const boomError = Boom.notFound('User not found')
+
+        jest.mocked(updateUser).mockRejectedValue(boomError)
+
+        const response = await server.inject({
+          method: 'PUT',
+          url: '/users/nonexistent',
+          payload: {
+            roles: ['admin']
+          },
+          auth
+        })
+
+        expect(response.statusCode).toBe(404)
+        expect(response.result).toBeDefined()
+        // @ts-expect-error - Boom error response structure
+        expect(response.result.message).toBe('User not found')
       })
     })
   })
