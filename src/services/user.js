@@ -204,12 +204,13 @@ async function findExistingUser(userId) {
  * @param {AzureUser} member - Azure AD group member
  * @param {ClientSession} session - MongoDB session for transaction
  */
-async function processAdminUser(member, session) {
+export async function processAdminUser(member, session) {
   const existingUser = await findExistingUser(member.id)
 
   if (existingUser) {
-    if (existingUser.roles && !existingUser.roles.includes(Roles.Admin)) {
-      const updatedRoles = [...new Set([...existingUser.roles, Roles.Admin])]
+    const userRoles = existingUser.roles ?? []
+    if (!userRoles.includes(Roles.Admin)) {
+      const updatedRoles = [...new Set([...userRoles, Roles.Admin])]
       const user = {
         userId: member.id,
         roles: updatedRoles,
@@ -241,7 +242,7 @@ async function processAdminUser(member, session) {
  * @param {AzureUser[]} groupMembers - Array of group members from Azure AD
  * @param {ClientSession} session - MongoDB session for transaction
  */
-async function processAllAdminUsers(groupMembers, session) {
+export async function processAllAdminUsers(groupMembers, session) {
   await session.withTransaction(async () => {
     for (const member of groupMembers) {
       try {
@@ -368,7 +369,7 @@ async function processAllMigrationUsers(azureUsers, roles, results, session) {
  * Initialise migration resources
  * @returns {{roleEditorGroupId: string, azureAdService: any, session: any}} Migration resources
  */
-function initialiseMigrationResources() {
+export function initialiseMigrationResources() {
   const roleEditorGroupId = config.get('roleEditorGroupId')
   const azureAdService = getAzureAdService()
   const session = client.startSession()
@@ -380,7 +381,7 @@ function initialiseMigrationResources() {
  * Create initial results structure
  * @returns {{successful: MigratedUser[], failed: FailedUser[], skipped: SkippedUser[]}} Empty results object
  */
-function createMigrationResults() {
+export function createMigrationResults() {
   return {
     successful: [],
     failed: [],
@@ -394,7 +395,7 @@ function createMigrationResults() {
  * @param {{successful: MigratedUser[], failed: FailedUser[], skipped: SkippedUser[]}} results - Migration results
  * @returns {MigrationResult} Final migration result
  */
-function finaliseMigrationResult(azureUsers, results) {
+export function finaliseMigrationResult(azureUsers, results) {
   logger.info(
     `Migration completed: ${results.successful.length} successful, ${results.failed.length} failed, ${results.skipped.length} skipped`
   )
