@@ -15,6 +15,12 @@
             "exec": [
               "pm.test(\"response is ok\", function () {",
               "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// Debug: Check if we're in the right environment",
+              "console.log('Environment check:', {",
+              "    apiUrl: pm.environment.get('root'),",
+              "    accessTokenUrl: pm.environment.get('accessTokenUrl')",
               "});"
             ],
             "type": "text/javascript",
@@ -45,10 +51,15 @@
           "script": {
             "exec": [
               "pm.test(\"response is ok\", function () {",
+              "    if (pm.response.code === 500) {",
+              "        console.log('Add user 1 - 500 Error Response:', pm.response.text());",
+              "    }",
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
-              "    pm.expect(responseData.message).to.eq('success')",
-              "    pm.expect(responseData.id).to.eq('user-id1')",
+              "    pm.expect(responseData.id).to.be.a('string').and.not.be.empty;",
+              "    pm.expect(responseData.email).to.eq('email1@mail.com');",
+              "    pm.expect(responseData.displayName).to.be.a('string').and.not.be.empty;",
+              "    pm.collectionVariables.set('user_1_id', responseData.id);",
               "});"
             ],
             "type": "text/javascript",
@@ -61,7 +72,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"userId\": \"user-id1\",\n    \"roles\": [\"admin\"]\n}",
+          "raw": "{\n    \"email\": \"email1@mail.com\",\n    \"roles\": [\"admin\"]\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -88,10 +99,15 @@
           "script": {
             "exec": [
               "pm.test(\"response is ok\", function () {",
+              "    if (pm.response.code === 500) {",
+              "        console.log('Add user 2 - 500 Error Response:', pm.response.text());",
+              "    }",
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
-              "    pm.expect(responseData.message).to.eq('success')",
-              "    pm.expect(responseData.id).to.eq('user-id2')",
+              "    pm.expect(responseData.id).to.be.a('string').and.not.be.empty;",
+              "    pm.expect(responseData.email).to.eq('email2@mail.com');",
+              "    pm.expect(responseData.displayName).to.be.a('string').and.not.be.empty;",
+              "    pm.collectionVariables.set('user_2_id', responseData.id);",
               "});"
             ],
             "type": "text/javascript",
@@ -104,7 +120,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"userId\": \"user-id2\",\n    \"roles\": [\"form-creator\"]\n}",
+          "raw": "{\n    \"email\": \"email2@mail.com\",\n    \"roles\": [\"form-creator\"]\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -133,7 +149,7 @@
               "pm.test(\"response is ok\", function () {",
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
-              "    pm.expect(responseData.message).to.eq('success');",
+              "    pm.expect(responseData.entities).to.be.an('array');",
               "    pm.expect(responseData.entities.length).to.eq(2);",
               "});",
               ""
@@ -168,8 +184,9 @@
               "pm.test(\"response is ok\", function () {",
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
-              "    pm.expect(responseData.message).to.equal('success');",
-              "    pm.expect(responseData.entity.userId).to.eq('user-id2');",
+              "    const userId = pm.collectionVariables.get('user_2_id');",
+              "    pm.expect(responseData.entity.userId).to.eq(userId);",
+              "    pm.expect(responseData.entity.roles).to.include('form-creator');",
               "});"
             ],
             "type": "text/javascript",
@@ -181,13 +198,13 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{root}}/users/user-id2",
+          "raw": "{{root}}/users/{{user_2_id}}",
           "host": [
             "{{root}}"
           ],
           "path": [
             "users",
-            "user-id2"
+            "{{user_2_id}}"
           ]
         }
       },
@@ -222,13 +239,13 @@
           }
         },
         "url": {
-          "raw": "{{root}}/users/user-id2",
+          "raw": "{{root}}/users/{{user_2_id}}",
           "host": [
             "{{root}}"
           ],
           "path": [
             "users",
-            "user-id2"
+            "{{user_2_id}}"
           ]
         }
       },
@@ -244,8 +261,8 @@
               "pm.test(\"response is ok\", function () {",
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
-              "    pm.expect(responseData.message).to.equal('success');",
-              "    pm.expect(responseData.entity.userId).to.eq('user-id2');",
+              "    const userId = pm.collectionVariables.get('user_2_id');",
+              "    pm.expect(responseData.entity.userId).to.eq(userId);",
               "    pm.expect(responseData.entity.roles.length).to.eq(1);",
               "    pm.expect(responseData.entity.roles[0]).to.eq('admin');",
               "    pm.expect(responseData.entity.scopes[0]).to.eq('form-delete');",
@@ -261,13 +278,13 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{root}}/users/user-id2",
+          "raw": "{{root}}/users/{{user_2_id}}",
           "host": [
             "{{root}}"
           ],
           "path": [
             "users",
-            "user-id2"
+            "{{user_2_id}}"
           ]
         }
       },
@@ -293,13 +310,13 @@
         "method": "DELETE",
         "header": [],
         "url": {
-          "raw": "{{root}}/users/user-id2",
+          "raw": "{{root}}/users/{{user_2_id}}",
           "host": [
             "{{root}}"
           ],
           "path": [
             "users",
-            "user-id2"
+            "{{user_2_id}}"
           ]
         }
       },
@@ -315,9 +332,10 @@
               "pm.test(\"response is ok\", function () {",
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
-              "    pm.expect(responseData.message).to.eq('success');",
               "    pm.expect(responseData.entities.length).to.eq(1);",
-              "    pm.expect(responseData.entities[0].userId).to.eq('user-id1');",
+              "    const userId = pm.collectionVariables.get('user_1_id');",
+              "    pm.expect(responseData.entities[0].userId).to.eq(userId);",
+              "    pm.expect(responseData.entities[0].roles).to.include('admin');",
               "});",
               ""
             ],

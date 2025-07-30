@@ -26,7 +26,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: /tmp/docker-save
-        key: ${{ runner.os }}-docker-${{ hashFiles('docker-compose.integration-test.yml') }}
+        key: ${{ runner.os }}-docker-${{ hashFiles('docker-compose.integration-test.yml', 'Dockerfile', 'package*.json') }}
         restore-keys: |
           ${{ runner.os }}-docker-
 
@@ -48,27 +48,46 @@ jobs:
         node-version: '22'
         cache: 'npm'
 
+    - name: Install dependencies
+      run: npm ci
+
     - name: Run Integration Tests (PR)
       if: github.event_name == 'pull_request'
-      run: npm run test:integration
+      run: |
+        npm run test:integration:setup
+        npm run test:integration:start
+        npm run test:integration:wait
+        npm run test:integration:run
+        EXIT_CODE=$?
+        if [ $EXIT_CODE -ne 0 ]; then
+          echo "Tests failed. Showing app logs:"
+          docker logs forms-entitlement-api-app-test --tail 100
+        fi
+        npm run test:integration:stop
+        exit $EXIT_CODE
 
     - name: Run Integration Tests with Reports (Main)
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       run: |
+        npm ci
         npm run test:integration:setup
         npm run test:integration:start
         npm run test:integration:wait
 
         mkdir -p ./newman-reports
         docker compose -f docker-compose.integration-test.yml run --rm --entrypoint="" \
-          newman sh -c "npm install -g newman-reporter-htmlextra && newman run /etc/newman/forms-manager-ci-mock.postman_collection.json \
-          -e /etc/newman/forms-manager-ci-mock.postman_environment.json \
+          newman sh -c "npm install -g newman-reporter-htmlextra && newman run /etc/newman/forms-entitlement-api-ci-mock.postman_collection.json \
+          -e /etc/newman/forms-entitlement-api-ci-mock.postman_environment.json \
           -r cli,json,htmlextra \
           --reporter-json-export /etc/newman/reports/newman-summary.json \
           --reporter-htmlextra-export /etc/newman/reports/newman-report.html \
           --reporter-htmlextra-showConsoleLogs"
 
         EXIT_CODE=$?
+        if [ $EXIT_CODE -ne 0 ]; then
+          echo "Tests failed. Showing app logs:"
+          docker logs forms-entitlement-api-app-test --tail 100
+        fi
         npm run test:integration:stop
         exit $EXIT_CODE
 
