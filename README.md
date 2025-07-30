@@ -123,14 +123,15 @@ git config --global core.autocrlf false
 
 ## API endpoints
 
-| Endpoint               | Description                                    |
-| :--------------------- | :--------------------------------------------- |
-| `GET: /health`         | Health                                         |
-| `GET: /roles `         | Get a list of all roles and their descriptions |
-| `GET: /users`.         | Get a list of all users                        |
-| `GET: /users/<userid>` | Get a specific user                            |
-| `POST: /users`         | Add a user                                     |
-| `PUT: /users/<userid>` | Update a specific user                         |
+| Endpoint                  | Description             |
+| ------------------------- | ----------------------- |
+| `GET: /health `           | Health check endpoint   |
+| `GET: /roles `            | Get a list of all roles |
+| `GET: /users`.            | Get a list of all users |
+| `GET: /users/<userid>`    | Get a specific user     |
+| `POST: /users`            | Add a user              |
+| `PUT: /users/<userid>`    | Update a specific user  |
+| `DELETE: /users/<userid>` | Delete a specific user  |
 
 ## Development helpers
 

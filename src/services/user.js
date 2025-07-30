@@ -66,7 +66,7 @@ export async function getUser(userId) {
   try {
     return mapUser(await get(userId))
   } catch (err) {
-    logger.error(
+    logger.info(
       `[getUser] Failed to get user with userID '${userId}' - ${getErrorMessage(err)}`
     )
 
@@ -107,8 +107,7 @@ export async function addUser(email, roles) {
     return {
       id: azureUser.id,
       email: azureUser.email,
-      displayName: azureUser.displayName,
-      status: 'success'
+      displayName: azureUser.displayName
     }
   } catch (err) {
     logger.error(`[addUser] Failed to add user - ${getErrorMessage(err)}`)
@@ -145,8 +144,7 @@ export async function updateUser(userId, roles) {
     logger.info(`Updated user with userID '${userId}'`)
 
     return {
-      id: userId,
-      status: 'success'
+      id: userId
     }
   } catch (err) {
     logger.error(`[updateUser] Failed to update user - ${getErrorMessage(err)}`)
@@ -174,8 +172,7 @@ export async function deleteUser(userId) {
     logger.info(`Deleted user with userID '${userId}'`)
 
     return {
-      id: userId,
-      status: 'success'
+      id: userId
     }
   } catch (err) {
     logger.error(`[deleteUser] Failed to delete user - ${getErrorMessage(err)}`)
@@ -203,9 +200,14 @@ async function findExistingUser(userId) {
  * Process a single admin user - create if doesn't exist, add admin role if missing
  * @param {AzureUser} member - Azure AD group member
  * @param {ClientSession} session - MongoDB session for transaction
+ * @param {Map<string, Partial<UserEntitlementDocument>>} existingUsers - Map of existing users by userId
  */
-export async function processAdminUser(member, session) {
-  const existingUser = await findExistingUser(member.id)
+export async function processAdminUser(
+  member,
+  session,
+  existingUsers = new Map()
+) {
+  const existingUser = existingUsers.get(member.id)
 
   if (existingUser) {
     const userRoles = existingUser.roles ?? []
@@ -217,13 +219,9 @@ export async function processAdminUser(member, session) {
         scopes: mapScopesToRoles(updatedRoles)
       }
       await update(member.id, user, session)
-      logger.info(
-        `Updated user with admin privileges: ${member.id} (${member.displayName})`
-      )
+      logger.info(`Updated user with admin privileges: ${member.id}`)
     } else {
-      logger.info(
-        `User already has admin privileges: ${member.id} (${member.displayName})`
-      )
+      logger.info(`User already has admin privileges: ${member.id}`)
     }
   } else {
     // User doesn't exist, create them with admin role
@@ -233,7 +231,7 @@ export async function processAdminUser(member, session) {
       scopes: mapScopesToRoles([Roles.Admin])
     }
     await create(user, session)
-    logger.info(`Created admin user: ${member.id} (${member.displayName})`)
+    logger.info(`Created admin user: ${member.id}`)
   }
 }
 
@@ -243,13 +241,23 @@ export async function processAdminUser(member, session) {
  * @param {ClientSession} session - MongoDB session for transaction
  */
 export async function processAllAdminUsers(groupMembers, session) {
+  // First, get all existing users to avoid individual lookups
+  const allUsers = await getAll()
+  const existingUsersMap = new Map(
+    allUsers
+      .filter((user) => user.userId) // Filter out users without userId
+      .map((user) => [/** @type {string} */ (user.userId), user])
+  )
+
+  logger.info(`Found ${allUsers.length} existing users in database`)
+
   await session.withTransaction(async () => {
     for (const member of groupMembers) {
       try {
-        await processAdminUser(member, session)
+        await processAdminUser(member, session, existingUsersMap)
       } catch (err) {
         logger.error(
-          `Failed to sync admin user ${member.id}: ${getErrorMessage(err)}`
+          `Failed to process admin user ${member.id}: ${getErrorMessage(err)}`
         )
       }
     }

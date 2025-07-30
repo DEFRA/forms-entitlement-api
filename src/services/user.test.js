@@ -236,7 +236,6 @@ describe('User service', () => {
       )
       expect(result.email).toBe(testEmail)
       expect(result.displayName).toBe('Test User')
-      expect(result.status).toBe('success')
     })
 
     it('should handle Azure AD service errors', async () => {
@@ -281,7 +280,6 @@ describe('User service', () => {
       const result = await updateUser(mockUserId1, [Roles.FormCreator])
 
       expect(result.id).toBe(mockUserId1)
-      expect(result.status).toBe('success')
     })
 
     it('should handle database errors', async () => {
@@ -301,7 +299,6 @@ describe('User service', () => {
       const result = await deleteUser(mockUserId1)
 
       expect(result.id).toBe(mockUserId1)
-      expect(result.status).toBe('success')
     })
 
     it('should handle database errors', async () => {
@@ -338,21 +335,21 @@ describe('User service', () => {
     })
 
     it('should add admin role to existing user without admin privileges', async () => {
+      const mockMember = {
+        id: 'azure-user-1',
+        displayName: 'Test User',
+        email: 'test@example.com'
+      }
+
       const existingUser = {
         userId: 'azure-user-1',
         roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead]
+        scopes: ['some-scope']
       }
-      jest.mocked(get).mockResolvedValue(existingUser)
-      jest.mocked(update).mockResolvedValue({
-        acknowledged: true,
-        matchedCount: 1,
-        modifiedCount: 1,
-        upsertedCount: 0,
-        upsertedId: null
-      })
 
-      await processAdminUser(mockMember, mockSession)
+      const existingUsersMap = new Map([['azure-user-1', existingUser]])
+
+      await processAdminUser(mockMember, mockSession, existingUsersMap)
 
       expect(update).toHaveBeenCalledWith(
         'azure-user-1',
@@ -361,38 +358,46 @@ describe('User service', () => {
         }),
         mockSession
       )
+      expect(create).not.toHaveBeenCalled()
     })
 
     it('should not modify existing admin user', async () => {
+      const mockMember = {
+        id: 'azure-user-1',
+        displayName: 'Test User',
+        email: 'test@example.com'
+      }
+
       const existingUser = {
         userId: 'azure-user-1',
-        roles: [Roles.Admin, Roles.FormCreator],
-        scopes: [Scopes.FormRead]
+        roles: [Roles.Admin],
+        scopes: ['some-scope']
       }
-      jest.mocked(get).mockResolvedValue(existingUser)
 
-      await processAdminUser(mockMember, mockSession)
+      const existingUsersMap = new Map([['azure-user-1', existingUser]])
+
+      await processAdminUser(mockMember, mockSession, existingUsersMap)
 
       expect(update).not.toHaveBeenCalled()
       expect(create).not.toHaveBeenCalled()
     })
 
     it('should handle users with undefined roles', async () => {
+      const mockMember = {
+        id: 'azure-user-1',
+        displayName: 'Test User',
+        email: 'test@example.com'
+      }
+
       const existingUser = {
         userId: 'azure-user-1',
         roles: undefined,
-        scopes: [Scopes.FormRead]
+        scopes: ['some-scope']
       }
-      jest.mocked(get).mockResolvedValue(existingUser)
-      jest.mocked(update).mockResolvedValue({
-        acknowledged: true,
-        matchedCount: 1,
-        modifiedCount: 1,
-        upsertedCount: 0,
-        upsertedId: null
-      })
 
-      await processAdminUser(mockMember, mockSession)
+      const existingUsersMap = new Map([['azure-user-1', existingUser]])
+
+      await processAdminUser(mockMember, mockSession, existingUsersMap)
 
       expect(update).toHaveBeenCalledWith(
         'azure-user-1',
@@ -401,21 +406,19 @@ describe('User service', () => {
         }),
         mockSession
       )
+      expect(create).not.toHaveBeenCalled()
     })
   })
 
   describe('processAllAdminUsers', () => {
-    const mockMembers = [
-      { id: 'user-1', displayName: 'User 1', email: 'user1@defra.gov.uk' },
-      { id: 'user-2', displayName: 'User 2', email: 'user2@defra.gov.uk' }
-    ]
-
     it('should process all users successfully', async () => {
-      jest.mocked(get).mockRejectedValue(new Error('User not found'))
-      jest.mocked(create).mockResolvedValue({
-        acknowledged: true,
-        insertedId: new ObjectId()
-      })
+      const mockMembers = [
+        { id: 'user-1', displayName: 'User 1', email: 'user1@defra.gov.uk' },
+        { id: 'user-2', displayName: 'User 2', email: 'user2@defra.gov.uk' }
+      ]
+
+      // Mock getAll to return empty array
+      jest.mocked(getAll).mockResolvedValue([])
 
       await processAllAdminUsers(mockMembers, mockSession)
 
@@ -424,28 +427,27 @@ describe('User service', () => {
     })
 
     it('should handle individual user processing errors gracefully', async () => {
-      jest.mocked(get).mockImplementation((userId) => {
-        if (userId === 'user-1') {
-          return Promise.reject(new Error('User not found'))
-        }
-        return Promise.resolve({
-          userId: 'user-2',
-          roles: [Roles.FormCreator],
-          scopes: [Scopes.FormRead]
+      const mockMembers = [
+        { id: 'user-1', displayName: 'User 1', email: 'user1@defra.gov.uk' },
+        { id: 'user-2', displayName: 'User 2', email: 'user2@defra.gov.uk' },
+        { id: 'user-3', displayName: 'User 3', email: 'user3@defra.gov.uk' }
+      ]
+
+      // Mock getAll to return empty array
+      jest.mocked(getAll).mockResolvedValue([])
+
+      // Make user-2 creation fail
+      jest
+        .mocked(create)
+        .mockResolvedValueOnce({
+          acknowledged: true,
+          insertedId: new ObjectId()
         })
-      })
-
-      jest.mocked(create).mockImplementation(() => {
-        throw new Error('Database error')
-      })
-
-      jest.mocked(update).mockResolvedValue({
-        acknowledged: true,
-        matchedCount: 1,
-        modifiedCount: 1,
-        upsertedCount: 0,
-        upsertedId: null
-      })
+        .mockRejectedValueOnce(new Error('Database error'))
+        .mockResolvedValueOnce({
+          acknowledged: true,
+          insertedId: new ObjectId()
+        })
 
       // Should not throw even if individual users fail
       await expect(
@@ -455,6 +457,14 @@ describe('User service', () => {
     })
 
     it('should handle transaction errors', async () => {
+      const mockMembers = [
+        { id: 'user-1', displayName: 'User 1', email: 'user1@defra.gov.uk' }
+      ]
+
+      // Mock getAll to return empty array
+      jest.mocked(getAll).mockResolvedValue([])
+
+      // Mock transaction to fail
       mockSession.withTransaction.mockRejectedValue(
         new Error('Transaction failed')
       )
@@ -567,6 +577,21 @@ describe('User service', () => {
       expect(result.summary.failed).toBe(1)
       expect(result.results.failed).toHaveLength(1)
       expect(result.results.failed[0].error).toBe('Database error')
+    })
+
+    it('should log error and rethrow when migration fails', async () => {
+      const mockGetGroupMembers = jest
+        .fn()
+        .mockRejectedValue(new Error('Azure service unavailable'))
+      jest
+        .spyOn(azureAdModule, 'getAzureAdService')
+        .mockReturnValue(
+          /** @type {any} */ ({ getGroupMembers: mockGetGroupMembers })
+        )
+
+      await expect(migrateUsersFromAzureGroup()).rejects.toThrow(
+        'Azure service unavailable'
+      )
     })
   })
 

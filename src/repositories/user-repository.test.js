@@ -168,15 +168,21 @@ describe('user-repository', () => {
 
   describe('updateUser', () => {
     it('should update a user', async () => {
-      mockCollection.updateOne.mockResolvedValue({ modifiedCount: 1 })
+      mockCollection.updateOne.mockResolvedValue({
+        matchedCount: 1,
+        modifiedCount: 1
+      })
       const result = await update(mockUserId1, mockUser, mockSession)
-      expect(result).toEqual({ modifiedCount: 1 })
+      expect(result).toEqual({ matchedCount: 1, modifiedCount: 1 })
     })
 
     it('should handle a failure to update', async () => {
-      mockCollection.updateOne.mockResolvedValue({ modifiedCount: 0 })
-      await expect(update(mockUserId1, mockSession)).rejects.toThrow(
-        "User with ID '111f119119e644a0a8c72118' not updated. Modified count 0"
+      mockCollection.updateOne.mockResolvedValue({
+        matchedCount: 0,
+        modifiedCount: 0
+      })
+      await expect(update(mockUserId1, mockUser, mockSession)).rejects.toThrow(
+        "User with ID '111f119119e644a0a8c72118' not found"
       )
     })
 
@@ -206,7 +212,7 @@ describe('user-repository', () => {
     it('should handle a failure to remove', async () => {
       mockCollection.deleteOne.mockResolvedValue({ deletedCount: 0 })
       await expect(remove(mockUserId1, mockSession)).rejects.toThrow(
-        "ailed to delete user ID '111f119119e644a0a8c72118'. Expected deleted count of 1, received 0"
+        "User with ID '111f119119e644a0a8c72118' not found"
       )
     })
   })

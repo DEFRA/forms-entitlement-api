@@ -27,7 +27,7 @@ describe('Health route', () => {
 
       expect(response.statusCode).toEqual(okStatusCode)
       expect(response.headers['content-type']).toContain(jsonContentType)
-      expect(response.result).toEqual({ message: 'success' })
+      expect(response.result).toEqual({})
     })
   })
 })
