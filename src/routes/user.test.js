@@ -69,7 +69,13 @@ describe('User route', () => {
 
     describe('POST /users', () => {
       test('should add the user', async () => {
-        jest.mocked(addUser).mockResolvedValue({ id: '123', status: 'success' })
+        jest
+          .mocked(addUser)
+          .mockResolvedValue({
+            id: '123',
+            email: 'address@mail.com',
+            status: 'success'
+          })
 
         const response = await server.inject({
           method: 'POST',
@@ -83,7 +89,11 @@ describe('User route', () => {
 
         expect(response.statusCode).toEqual(okStatusCode)
         expect(response.headers['content-type']).toContain(jsonContentType)
-        expect(response.result).toEqual({ id: '123', message: 'success' })
+        expect(response.result).toEqual({
+          id: '123',
+          email: 'address@mail.com',
+          message: 'success'
+        })
       })
     })
 
@@ -142,14 +152,12 @@ describe('User route', () => {
             {
               name: 'Admin',
               code: 'admin',
-              description:
-                'Allows full access to forms and user management functions'
+              description: 'Can publish and delete forms and manage users'
             },
             {
               name: 'Form creator',
               code: 'form-creator',
-              description:
-                'Allows a user to create a form and edit it while in draft'
+              description: 'Can create and edit existing forms only'
             }
           ]
         })

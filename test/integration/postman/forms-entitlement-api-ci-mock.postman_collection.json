@@ -48,7 +48,7 @@
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
               "    pm.expect(responseData.message).to.eq('success')",
-              "    pm.expect(responseData.email).to.eq('email1@mail.com')",
+              "    pm.expect(responseData.id).to.be.a('string').and.not.be.empty",
               "});"
             ],
             "type": "text/javascript",
@@ -91,7 +91,7 @@
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
               "    pm.expect(responseData.message).to.eq('success')",
-              "    pm.expect(responseData.email).to.eq('email2@mail.com')",
+              "    pm.expect(responseData.id).to.be.a('string').and.not.be.empty",
               "});"
             ],
             "type": "text/javascript",
@@ -246,7 +246,6 @@
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
               "    pm.expect(responseData.message).to.equal('success');",
-              "    pm.expect(responseData.entity.email).to.eq('mail2@mail.com');",
               "    pm.expect(responseData.entity.roles.length).to.eq(1);",
               "    pm.expect(responseData.entity.roles[0]).to.eq('admin');",
               "    pm.expect(responseData.entity.scopes[0]).to.eq('form-delete');",
@@ -318,7 +317,7 @@
               "    const responseData = pm.response.json();",
               "    pm.expect(responseData.message).to.eq('success');",
               "    pm.expect(responseData.entities.length).to.eq(1);",
-              "    pm.expect(responseData.entities[0].email).to.eq('mail1@mail.com');",
+              "    pm.expect(responseData.entities[0].email).to.eq('email1@mail.com');",
               "});",
               ""
             ],

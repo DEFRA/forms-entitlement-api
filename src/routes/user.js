@@ -42,7 +42,11 @@ export default [
      */
     handler: async (request, h) => {
       const result = await addUser(request.payload.email, request.payload.roles)
-      return h.response({ message: result.status, id: result.id })
+      return h.response({
+        message: result.status,
+        id: result.id,
+        email: result.email
+      })
     },
     options: {
       validate: {

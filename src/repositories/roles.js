@@ -15,11 +15,11 @@ export const RoleDetails = {
   [Roles.Admin]: {
     name: 'Admin',
     code: 'admin',
-    description: 'Allows full access to forms and user management functions'
+    description: 'Can publish and delete forms and manage users'
   },
   [Roles.FormCreator]: {
     name: 'Form creator',
     code: 'form-creator',
-    description: 'Allows a user to create a form and edit it while in draft'
+    description: 'Can create and edit existing forms only'
   }
 }

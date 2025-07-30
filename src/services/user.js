@@ -110,7 +110,7 @@ export async function addUser(email, roles) {
 
     return {
       id: azureUser.userId,
-      email,
+      email: azureUser.email,
       status: 'success'
     }
   } catch (err) {
