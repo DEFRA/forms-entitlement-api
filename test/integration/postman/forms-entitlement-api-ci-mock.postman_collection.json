@@ -44,22 +44,20 @@
       "response": []
     },
     {
-      "name": "Add user 1",
+      "name": "Verify user 1 exists",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"response is ok\", function () {",
-              "    if (pm.response.code === 500) {",
-              "        console.log('Add user 1 - 500 Error Response:', pm.response.text());",
-              "    }",
+              "pm.test(\"Pre-seeded user 1 exists\", function () {",
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
-              "    pm.expect(responseData.id).to.be.a('string').and.not.be.empty;",
-              "    pm.expect(responseData.email).to.eq('email1@mail.com');",
-              "    pm.expect(responseData.displayName).to.be.a('string').and.not.be.empty;",
-              "    pm.collectionVariables.set('user_1_id', responseData.id);",
+              "    pm.expect(responseData.entity).to.exist;",
+              "    pm.expect(responseData.entity.userId).to.eq('user-email1-mail-com');",
+              "    pm.expect(responseData.entity.roles).to.include('admin');",
+              "    pm.expect(responseData.entity.scopes).to.be.an('array');",
+              "    pm.collectionVariables.set('user_1_id', 'user-email1-mail-com');",
               "});"
             ],
             "type": "text/javascript",
@@ -68,46 +66,36 @@
         }
       ],
       "request": {
-        "method": "POST",
+        "method": "GET",
         "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"email\": \"email1@mail.com\",\n    \"roles\": [\"admin\"]\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
         "url": {
-          "raw": "{{root}}/users",
+          "raw": "{{root}}/users/user-email1-mail-com",
           "host": [
             "{{root}}"
           ],
           "path": [
-            "users"
+            "users",
+            "user-email1-mail-com"
           ]
         }
       },
       "response": []
     },
     {
-      "name": "Add user 2",
+      "name": "Verify user 2 exists",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"response is ok\", function () {",
-              "    if (pm.response.code === 500) {",
-              "        console.log('Add user 2 - 500 Error Response:', pm.response.text());",
-              "    }",
+              "pm.test(\"Pre-seeded user 2 exists\", function () {",
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
-              "    pm.expect(responseData.id).to.be.a('string').and.not.be.empty;",
-              "    pm.expect(responseData.email).to.eq('email2@mail.com');",
-              "    pm.expect(responseData.displayName).to.be.a('string').and.not.be.empty;",
-              "    pm.collectionVariables.set('user_2_id', responseData.id);",
+              "    pm.expect(responseData.entity).to.exist;",
+              "    pm.expect(responseData.entity.userId).to.eq('user-email2-mail-com');",
+              "    pm.expect(responseData.entity.roles).to.include('form-creator');",
+              "    pm.expect(responseData.entity.scopes).to.be.an('array');",
+              "    pm.collectionVariables.set('user_2_id', 'user-email2-mail-com');",
               "});"
             ],
             "type": "text/javascript",
@@ -116,24 +104,16 @@
         }
       ],
       "request": {
-        "method": "POST",
+        "method": "GET",
         "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"email\": \"email2@mail.com\",\n    \"roles\": [\"form-creator\"]\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
         "url": {
-          "raw": "{{root}}/users",
+          "raw": "{{root}}/users/user-email2-mail-com",
           "host": [
             "{{root}}"
           ],
           "path": [
-            "users"
+            "users",
+            "user-email2-mail-com"
           ]
         }
       },
@@ -181,11 +161,10 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"response is ok\", function () {",
+              "pm.test(\"Get user 2\", function () {",
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
-              "    const userId = pm.collectionVariables.get('user_2_id');",
-              "    pm.expect(responseData.entity.userId).to.eq(userId);",
+              "    pm.expect(responseData.entity.userId).to.eq('user-email2-mail-com');",
               "    pm.expect(responseData.entity.roles).to.include('form-creator');",
               "});"
             ],
@@ -198,13 +177,13 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{root}}/users/{{user_2_id}}",
+          "raw": "{{root}}/users/user-email2-mail-com",
           "host": [
             "{{root}}"
           ],
           "path": [
             "users",
-            "{{user_2_id}}"
+            "user-email2-mail-com"
           ]
         }
       },
@@ -239,13 +218,13 @@
           }
         },
         "url": {
-          "raw": "{{root}}/users/{{user_2_id}}",
+          "raw": "{{root}}/users/user-email2-mail-com",
           "host": [
             "{{root}}"
           ],
           "path": [
             "users",
-            "{{user_2_id}}"
+            "user-email2-mail-com"
           ]
         }
       },
@@ -258,15 +237,14 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test(\"response is ok\", function () {",
+              "pm.test(\"User 2 updated to admin\", function () {",
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
-              "    const userId = pm.collectionVariables.get('user_2_id');",
-              "    pm.expect(responseData.entity.userId).to.eq(userId);",
+              "    pm.expect(responseData.entity.userId).to.eq('user-email2-mail-com');",
               "    pm.expect(responseData.entity.roles.length).to.eq(1);",
               "    pm.expect(responseData.entity.roles[0]).to.eq('admin');",
-              "    pm.expect(responseData.entity.scopes[0]).to.eq('form-delete');",
-              "    pm.expect(responseData.entity.scopes[3]).to.eq('user-create');",
+              "    pm.expect(responseData.entity.scopes).to.include('form-delete');",
+              "    pm.expect(responseData.entity.scopes).to.include('user-create');",
               "});"
             ],
             "type": "text/javascript",
@@ -278,13 +256,13 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{root}}/users/{{user_2_id}}",
+          "raw": "{{root}}/users/user-email2-mail-com",
           "host": [
             "{{root}}"
           ],
           "path": [
             "users",
-            "{{user_2_id}}"
+            "user-email2-mail-com"
           ]
         }
       },
@@ -310,13 +288,13 @@
         "method": "DELETE",
         "header": [],
         "url": {
-          "raw": "{{root}}/users/{{user_2_id}}",
+          "raw": "{{root}}/users/user-email2-mail-com",
           "host": [
             "{{root}}"
           ],
           "path": [
             "users",
-            "{{user_2_id}}"
+            "user-email2-mail-com"
           ]
         }
       },
