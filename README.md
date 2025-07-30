@@ -9,6 +9,8 @@ Core delivery platform Node.js Backend Template.
     - [Setup](#setup)
     - [Development](#development)
     - [Testing](#testing)
+      - [Unit Tests](#unit-tests)
+      - [Integration Tests](#integration-tests)
     - [Production](#production)
     - [Npm scripts](#npm-scripts)
     - [Update dependencies](#update-dependencies)
@@ -77,11 +79,67 @@ npm run dev
 
 ### Testing
 
-To test the application run:
+#### Unit Tests
+
+To run unit tests:
 
 ```bash
 npm run test
 ```
+
+#### Integration Tests
+
+Integration tests verify the full API using Docker containers for infrastructure.
+
+**Automated CI/CD:**
+
+```bash
+npm run test:integration
+```
+
+**Local Development with Postman:**
+
+```bash
+# 1. Start test infrastructure
+npm run test:integration:setup
+
+# 2. Seed test database
+npm run test:integration:seed-local
+
+# 3. Start your local server (new terminal)
+npm run dev
+
+4. Import into Postman:
+  - Collection: test/integration/postman/forms-entitlement-api-ci-mock.postman_collection.json
+  - Environment: test/integration/postman/forms-entitlement-api-local.postman_environment.json
+
+5. Run tests manually in Postman
+
+# 6. Clean up when done
+npm run test:integration:stop
+```
+
+**Prerequisites:**
+
+- Docker running
+- Newman CLI: `npm install -g newman`
+- **Temporarily update your `.env` file** with test configuration:
+
+  ```bash
+  # 1. Add test database configuration
+  MONGO_URI='mongodb://localhost:27018/forms-entitlement-api-test?replicaSet=rs0&directConnection=true'
+  MONGO_DATABASE=forms-entitlement-api-test
+
+  # 2. OIDC Mock Server
+  OIDC_JWKS_URI="http://localhost:5556/.well-known/openid-configuration/jwks"
+  OIDC_VERIFY_AUD="newman-test-client"
+  OIDC_VERIFY_ISS="http://oidc:80"
+
+  # 3. Mock Azure AD
+  AZURE_CLIENT_ID="mock-client-id"
+  AZURE_CLIENT_SECRET="mock-client-secret"
+  AZURE_TENANT_ID="mock-tenant-id"
+  ```
 
 ### Production
 
