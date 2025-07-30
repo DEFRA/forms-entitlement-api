@@ -69,13 +69,11 @@ describe('User route', () => {
 
     describe('POST /users', () => {
       test('should add the user', async () => {
-        jest
-          .mocked(addUser)
-          .mockResolvedValue({
-            id: '123',
-            email: 'address@mail.com',
-            status: 'success'
-          })
+        jest.mocked(addUser).mockResolvedValue({
+          id: '123',
+          email: 'address@mail.com',
+          status: 'success'
+        })
 
         const response = await server.inject({
           method: 'POST',
