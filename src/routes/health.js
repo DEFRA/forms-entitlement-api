@@ -7,7 +7,7 @@ export default {
   method: 'GET',
   path: '/health',
   handler(request, h) {
-    return h.response({}).code(StatusCodes.OK)
+    return h.response({ message: 'success' }).code(StatusCodes.OK)
   },
   options: {
     auth: false

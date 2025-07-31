@@ -54,7 +54,7 @@ export async function get(userId, session = undefined) {
 
     return document
   } catch (error) {
-    logger.info(
+    logger.error(
       `[getUserById] Getting user with ID '${userId}' failed - ${getErrorMessage(error)}`
     )
 
@@ -72,12 +72,17 @@ export async function get(userId, session = undefined) {
  * @param {ClientSession} session - mongo transaction session
  */
 export async function create(document, session) {
+  logger.info(`Creating user with user ID '${document.userId}'`)
+
   const coll = /** @satisfies {Collection<UserEntitlementDocument>} */ (
     db.collection(USER_COLLECTION_NAME)
   )
 
   try {
     const result = await coll.insertOne(document, { session })
+
+    logger.info(`User created with user ID '${document.userId}'`)
+
     return result
   } catch (cause) {
     const message = `Creating user failed for user ID '${document.userId}'`

@@ -1,3 +1,4 @@
+import Boom from '@hapi/boom'
 import { ObjectId } from 'mongodb'
 import { pino } from 'pino'
 
@@ -117,6 +118,8 @@ describe('User service', () => {
     it('should map a complete user document', () => {
       const document = {
         userId: '123',
+        email: 'test@defra.gov.uk',
+        displayName: 'Test User',
         roles: [Roles.Admin],
         scopes: [Scopes.FormRead]
       }
@@ -125,6 +128,8 @@ describe('User service', () => {
 
       expect(result).toEqual({
         userId: '123',
+        email: 'test@defra.gov.uk',
+        displayName: 'Test User',
         roles: [Roles.Admin],
         scopes: [Scopes.FormRead]
       })
@@ -159,6 +164,22 @@ describe('User service', () => {
       ).toThrow(
         'User is malformed in the database. Expected fields are missing.'
       )
+    })
+
+    it('should map user without optional fields', () => {
+      const document = {
+        userId: '123',
+        roles: [Roles.Admin],
+        scopes: [Scopes.FormRead]
+      }
+
+      const result = mapUser(document)
+
+      expect(result).toEqual({
+        userId: '123',
+        roles: [Roles.Admin],
+        scopes: [Scopes.FormRead]
+      })
     })
   })
 
@@ -317,7 +338,7 @@ describe('User service', () => {
     }
 
     it('should create new admin user when user does not exist', async () => {
-      jest.mocked(get).mockRejectedValue(new Error('User not found'))
+      jest.mocked(get).mockRejectedValue(Boom.notFound('User not found'))
       jest.mocked(create).mockResolvedValue({
         acknowledged: true,
         insertedId: new ObjectId()
@@ -328,6 +349,8 @@ describe('User service', () => {
       expect(create).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: 'azure-user-1',
+          email: 'john.doe@defra.gov.uk',
+          displayName: 'John Doe',
           roles: [Roles.Admin]
         }),
         mockSession
@@ -558,7 +581,7 @@ describe('User service', () => {
 
   describe('migrateUsersFromAzureGroup', () => {
     it('should migrate users successfully with default role', async () => {
-      jest.mocked(get).mockRejectedValue(new Error('User not found'))
+      jest.mocked(get).mockRejectedValue(Boom.notFound('User not found'))
       jest.mocked(create).mockResolvedValue({
         acknowledged: true,
         insertedId: new ObjectId()
@@ -574,14 +597,14 @@ describe('User service', () => {
       expect(result.results.successful).toHaveLength(2)
       expect(create).toHaveBeenCalledWith(
         expect.objectContaining({
-          roles: [Roles.FormCreator]
+          roles: [Roles.Admin]
         }),
         expect.any(Object)
       )
     })
 
     it('should migrate users with custom roles', async () => {
-      jest.mocked(get).mockRejectedValue(new Error('User not found'))
+      jest.mocked(get).mockRejectedValue(Boom.notFound('User not found'))
       jest.mocked(create).mockResolvedValue({
         acknowledged: true,
         insertedId: new ObjectId()
@@ -607,7 +630,7 @@ describe('User service', () => {
             scopes: [Scopes.FormRead]
           })
         }
-        return Promise.reject(new Error('User not found'))
+        return Promise.reject(Boom.notFound('User not found'))
       })
       jest.mocked(create).mockResolvedValue({
         acknowledged: true,
@@ -619,11 +642,11 @@ describe('User service', () => {
       expect(result.summary.successful).toBe(1)
       expect(result.summary.skipped).toBe(1)
       expect(result.results.skipped).toHaveLength(1)
-      expect(result.results.skipped[0].reason).toBe('User already exists')
+      expect(result.results.skipped[0].error).toBe('User already exists')
     })
 
     it('should handle migration errors gracefully', async () => {
-      jest.mocked(get).mockRejectedValue(new Error('User not found'))
+      jest.mocked(get).mockRejectedValue(Boom.notFound('User not found'))
       jest.mocked(create).mockImplementation((user) => {
         if (user.userId === 'azure-user-1') {
           throw new Error('Database error')
@@ -730,7 +753,7 @@ describe('User service', () => {
             userId: 'user-3',
             displayName: 'User 3',
             email: 'user3@defra.gov.uk',
-            reason: 'User already exists'
+            error: 'User already exists'
           }
         ]
       }

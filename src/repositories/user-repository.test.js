@@ -168,7 +168,7 @@ describe('user-repository', () => {
 
   describe('updateUser', () => {
     it('should update a user', async () => {
-      mockCollection.updateOne.mockResolvedValue({
+      mockCollection.updateOne.mockResolvedValueOnce({
         matchedCount: 1,
         modifiedCount: 1
       })
@@ -177,7 +177,7 @@ describe('user-repository', () => {
     })
 
     it('should handle a failure to update', async () => {
-      mockCollection.updateOne.mockResolvedValue({
+      mockCollection.updateOne.mockResolvedValueOnce({
         matchedCount: 0,
         modifiedCount: 0
       })

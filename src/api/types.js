@@ -1,5 +1,5 @@
 /**
- * @typedef {{userId: string, roles: string[], scopes: string[]}} UserEntitlementDocument
+ * @typedef {{userId: string, email?: string, displayName?: string, roles: string[], scopes: string[]}} UserEntitlementDocument
  * @typedef {{ userId: string }} UserById
  * @typedef {{ email: string, roles: string[] }} UserEntitlementCreateRequest
  * @typedef {{ roles: string[] }} UserEntitlementUpdateRequest
@@ -20,7 +20,7 @@
  * @property {object} results - Detailed results
  * @property {MigratedUser[]} results.successful - Successfully migrated users
  * @property {FailedUser[]} results.failed - Failed migration users
- * @property {SkippedUser[]} results.skipped - Skipped users
+ * @property {FailedUser[]} results.skipped - Skipped users
  */
 
 /**
@@ -37,15 +37,7 @@
  * @property {string} userId - Azure AD user ID
  * @property {string} displayName - User display name
  * @property {string} email - User email
- * @property {string} error - Error message
- */
-
-/**
- * @typedef {object} SkippedUser
- * @property {string} userId - Azure AD user ID
- * @property {string} displayName - User display name
- * @property {string} email - User email
- * @property {string} reason - Reason for skipping
+ * @property {string} error - Error message or reason for failure/skip
  */
 
 /**

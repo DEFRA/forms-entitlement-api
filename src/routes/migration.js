@@ -1,9 +1,7 @@
 import Boom from '@hapi/boom'
-import Joi from 'joi'
 
 import { getErrorMessage } from '~/src/helpers/error-message.js'
-import { Roles } from '~/src/repositories/roles.js'
-import { migrateUsersFromAzureGroup } from '~/src/services/user.js'
+import { syncAdminUsersFromGroup } from '~/src/services/user.js'
 
 /**
  * @type {ServerRoute[]}
@@ -11,46 +9,29 @@ import { migrateUsersFromAzureGroup } from '~/src/services/user.js'
 export default [
   {
     method: 'POST',
-    path: '/users/migrate',
+    path: '/users/sync',
     handler: async (request, h) => {
-      const { roles = [Roles.FormCreator] } =
-        /** @type {{roles?: string[]}} */ (request.payload) || {}
-
       try {
-        const migrationResult = await migrateUsersFromAzureGroup(roles)
+        await syncAdminUsersFromGroup()
 
         return h.response({
-          message: 'Migration completed',
-          ...migrationResult
+          message: 'Admin users synced successfully'
         })
       } catch (error) {
         if (Boom.isBoom(error)) {
           throw error
         }
 
-        request.logger.error(`User migration failed: ${getErrorMessage(error)}`)
+        request.logger.error(`User sync failed: ${getErrorMessage(error)}`)
         throw Boom.internal('An error occurred while processing your request')
       }
     },
     options: {
       auth: 'azure-oidc-token',
-      validate: {
-        payload: Joi.object({
-          roles: Joi.array()
-            .items(
-              Joi.string().valid(
-                Roles.Admin,
-                'form-publisher',
-                Roles.FormCreator
-              )
-            )
-            .optional()
-        }).allow(null)
-      },
-      description: 'Migrate users from Azure AD group to entitlements api',
+      description: 'Sync admin users from Azure AD group to entitlements api',
       notes:
-        'Bulk imports users from the configured Azure AD migration source group',
-      tags: ['api', 'migration', 'users']
+        'Synchronizes admin users from the configured Azure AD role editor group',
+      tags: ['api', 'sync', 'users']
     }
   }
 ]
