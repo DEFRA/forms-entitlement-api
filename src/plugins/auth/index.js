@@ -63,7 +63,7 @@ function validateUserCredentials(artifacts) {
     }
   }
 
-  const { oid } = user
+  const oid = user.oid
   const groupsClaim = user.groups
 
   if (!oid) {

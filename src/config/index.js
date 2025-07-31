@@ -160,6 +160,27 @@ export const config = convict({
     default: '7049296f-2156-4d61-8ac3-349276438ef9',
     env: 'ROLE_EDITOR_GROUP_ID'
   },
+  azure: {
+    clientId: {
+      doc: 'Azure AD application client ID for Graph API access',
+      format: String,
+      default: '5aba38f7-c4d0-4003-933c-d727b2209c0e',
+      env: 'AZURE_CLIENT_ID'
+    },
+    clientSecret: {
+      doc: 'Azure AD application client secret for Graph API access',
+      format: String,
+      default: '',
+      env: 'AZURE_CLIENT_SECRET',
+      sensitive: true
+    },
+    tenantId: {
+      doc: 'Azure AD tenant ID',
+      format: String,
+      default: '6f504113-6b64-43f2-ade9-242e05780007',
+      env: 'AZURE_TENANT_ID'
+    }
+  },
   tracing: {
     header: {
       doc: 'CDP tracing header name',

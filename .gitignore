@@ -8,5 +8,6 @@ npm-debug.log
 coverage
 .cache
 .env
-newman-reports
+newman-report.*
+newman-summary.*
 *.tsbuildinfo

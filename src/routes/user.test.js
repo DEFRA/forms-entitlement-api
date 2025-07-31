@@ -1,40 +1,31 @@
-import {
-  mockAdminUser,
-  mockFormCreatorUser
-} from '~/src/api/__stubs__/users.js'
+import Boom from '@hapi/boom'
+import { beforeEach, describe, expect, jest, test } from '@jest/globals'
+
 import { createServer } from '~/src/api/server.js'
-import {
-  addUser,
-  deleteUser,
-  getAllUsers,
-  getUser,
-  updateUser
-} from '~/src/services/user.js'
+import * as allUsers from '~/src/services/user.js'
 import { auth } from '~/test/fixtures/auth.js'
 
-jest.mock('~/src/mongo.js')
 jest.mock('~/src/services/user.js')
-
-const okStatusCode = 200
-const jsonContentType = 'application/json'
+jest.mock('~/src/mongo.js')
 
 describe('User route', () => {
-  /** @type {Server} */
+  /** @type {import('@hapi/hapi').Server} */
   let server
 
-  beforeAll(async () => {
+  // Common test fixtures
+  const okStatusCode = 200
+  const jsonContentType = 'application/json'
+
+  beforeEach(async () => {
     server = await createServer()
     await server.initialize()
-  })
-
-  afterAll(() => {
-    return server.stop()
+    jest.clearAllMocks()
   })
 
   describe('Success responses', () => {
     describe('GET /users', () => {
       test('should return list of users', async () => {
-        jest.mocked(getAllUsers).mockResolvedValue([])
+        jest.mocked(allUsers.getAllUsers).mockResolvedValue([])
 
         const response = await server.inject({
           method: 'GET',
@@ -44,120 +35,258 @@ describe('User route', () => {
 
         expect(response.statusCode).toEqual(okStatusCode)
         expect(response.headers['content-type']).toContain(jsonContentType)
-        expect(response.result).toEqual({ entities: [], message: 'success' })
+        expect(response.result).toEqual({ entities: [] })
+
+        expect(allUsers.getAllUsers).toHaveBeenCalled()
       })
     })
 
     describe('GET /users/{userId}', () => {
       test('should return the user', async () => {
-        jest.mocked(getUser).mockResolvedValue(mockFormCreatorUser)
+        jest.mocked(allUsers.getUser).mockResolvedValue({
+          userId: '456',
+          roles: ['admin'],
+          scopes: ['user-create', 'user-edit']
+        })
 
         const response = await server.inject({
           method: 'GET',
-          url: '/users/123',
+          url: '/users/456',
           auth
         })
 
-        expect(response.statusCode).toEqual(okStatusCode)
+        expect(response.statusCode).toBe(okStatusCode)
         expect(response.headers['content-type']).toContain(jsonContentType)
         expect(response.result).toEqual({
-          entity: mockFormCreatorUser,
-          message: 'success'
+          entity: {
+            userId: '456',
+            roles: ['admin'],
+            scopes: ['user-create', 'user-edit']
+          }
         })
+
+        expect(allUsers.getUser).toHaveBeenCalledWith('456')
       })
     })
 
     describe('POST /users', () => {
       test('should add the user', async () => {
-        jest.mocked(addUser).mockResolvedValue({ id: '123', status: 'success' })
+        jest.mocked(allUsers.addUser).mockResolvedValue({
+          id: '456',
+          email: 'test@example.com',
+          displayName: 'Test User'
+        })
+
+        jest.mocked(allUsers.getUser).mockResolvedValue({
+          userId: '456',
+          roles: ['admin'],
+          scopes: ['user-create', 'user-edit']
+        })
 
         const response = await server.inject({
           method: 'POST',
           url: '/users',
+          auth,
           payload: {
-            userId: mockFormCreatorUser.userId,
-            roles: mockFormCreatorUser.roles
-          },
-          auth
+            email: 'test@example.com',
+            roles: ['admin']
+          }
         })
 
-        expect(response.statusCode).toEqual(okStatusCode)
+        expect(response.statusCode).toBe(okStatusCode)
         expect(response.headers['content-type']).toContain(jsonContentType)
-        expect(response.result).toEqual({ id: '123', message: 'success' })
+        expect(response.result).toEqual({
+          id: '456',
+          email: 'test@example.com',
+          displayName: 'Test User',
+          entity: {
+            userId: '456',
+            roles: ['admin'],
+            scopes: ['user-create', 'user-edit']
+          }
+        })
+
+        expect(allUsers.addUser).toHaveBeenCalledWith('test@example.com', [
+          'admin'
+        ])
+        expect(allUsers.getUser).toHaveBeenCalledWith('456')
       })
     })
 
     describe('PUT /users/{userId}', () => {
       test('should update the user', async () => {
-        jest
-          .mocked(updateUser)
-          .mockResolvedValue({ id: '456', status: 'success' })
+        jest.mocked(allUsers.updateUser).mockResolvedValue({
+          id: '456'
+        })
 
         const response = await server.inject({
           method: 'PUT',
-          url: '/users/123',
+          url: '/users/456',
+          auth,
           payload: {
-            roles: mockAdminUser.roles
-          },
-          auth
+            roles: ['admin']
+          }
         })
 
-        expect(response.statusCode).toEqual(okStatusCode)
+        expect(response.statusCode).toBe(okStatusCode)
         expect(response.headers['content-type']).toContain(jsonContentType)
-        expect(response.result).toEqual({ id: '456', message: 'success' })
+        expect(response.result).toEqual({ id: '456' })
+
+        expect(allUsers.updateUser).toHaveBeenCalledWith('456', ['admin'])
       })
     })
 
     describe('DELETE /users/{userId}', () => {
       test('should delete the user', async () => {
-        jest
-          .mocked(deleteUser)
-          .mockResolvedValue({ id: '456', status: 'success' })
+        jest.mocked(allUsers.deleteUser).mockResolvedValue({
+          id: '456'
+        })
 
         const response = await server.inject({
           method: 'DELETE',
-          url: '/users/123',
+          url: '/users/456',
           auth
         })
 
-        expect(response.statusCode).toEqual(okStatusCode)
+        expect(response.statusCode).toBe(okStatusCode)
         expect(response.headers['content-type']).toContain(jsonContentType)
-        expect(response.result).toEqual({ id: '456', message: 'success' })
+        expect(response.result).toEqual({ id: '456' })
+
+        expect(allUsers.deleteUser).toHaveBeenCalledWith('456')
       })
     })
 
     describe('GET /roles', () => {
-      test('should return list of roles with their descriptions', async () => {
+      test('should return list of roles with their names and codes', async () => {
         const response = await server.inject({
           method: 'GET',
           url: '/roles',
           auth
         })
 
-        expect(response.statusCode).toEqual(okStatusCode)
-        expect(response.headers['content-type']).toContain(jsonContentType)
-        expect(response.result).toEqual({
-          message: 'success',
-          roles: [
-            {
-              name: 'Admin',
-              code: 'admin',
-              description:
-                'Allows full access to forms and user management functions'
-            },
-            {
-              name: 'Form creator',
-              code: 'form-creator',
-              description:
-                'Allows a user to create a form and edit it while in draft'
-            }
-          ]
+        expect(response.statusCode).toBe(200)
+
+        const result = JSON.parse(response.payload)
+        expect(result.roles).toHaveLength(2)
+        expect(result.roles).toEqual([
+          {
+            name: 'Admin',
+            code: 'admin'
+          },
+          {
+            name: 'Form creator',
+            code: 'form-creator'
+          }
+        ])
+      })
+    })
+  })
+
+  describe('Error handling', () => {
+    describe('POST /users', () => {
+      test('should return 500 when addUser fails with generic error', async () => {
+        jest.mocked(allUsers.addUser).mockRejectedValue(new Error('Some error'))
+
+        const response = await server.inject({
+          method: 'POST',
+          url: '/users',
+          auth,
+          payload: {
+            email: 'test@example.com',
+            roles: ['admin']
+          }
         })
+
+        expect(response.statusCode).toBe(500)
+      })
+
+      test('should re-throw Boom errors without modification', async () => {
+        const boomError = Boom.badRequest('Bad request')
+        jest.mocked(allUsers.addUser).mockRejectedValue(boomError)
+
+        const response = await server.inject({
+          method: 'POST',
+          url: '/users',
+          auth,
+          payload: {
+            email: 'test@example.com',
+            roles: ['admin']
+          }
+        })
+
+        expect(response.statusCode).toBe(400)
+      })
+
+      test('should return 500 when getUser fails after successful addUser', async () => {
+        jest.mocked(allUsers.addUser).mockResolvedValue({
+          id: '456',
+          email: 'test@example.com',
+          displayName: 'Test User'
+        })
+        jest.mocked(allUsers.getUser).mockRejectedValue(new Error('DB error'))
+
+        const response = await server.inject({
+          method: 'POST',
+          url: '/users',
+          auth,
+          payload: {
+            email: 'test@example.com',
+            roles: ['admin']
+          }
+        })
+
+        expect(response.statusCode).toBe(500)
+      })
+    })
+
+    describe('PUT /users/{userId}', () => {
+      test('should return 500 when updateUser fails with generic error', async () => {
+        jest
+          .mocked(allUsers.updateUser)
+          .mockRejectedValue(new Error('Some error'))
+
+        const response = await server.inject({
+          method: 'PUT',
+          url: '/users/456',
+          auth,
+          payload: {
+            roles: ['admin']
+          }
+        })
+
+        expect(response.statusCode).toBe(500)
+      })
+
+      test('should re-throw Boom errors without modification', async () => {
+        const boomError = Boom.notFound('Not found')
+        jest.mocked(allUsers.updateUser).mockRejectedValue(boomError)
+
+        const response = await server.inject({
+          method: 'PUT',
+          url: '/users/456',
+          auth,
+          payload: {
+            roles: ['admin']
+          }
+        })
+
+        expect(response.statusCode).toBe(404)
+      })
+    })
+
+    describe('DELETE /users/{userId}', () => {
+      test('should return 404 when deleteUser fails with not found error', async () => {
+        const boomError = Boom.notFound('User not found')
+        jest.mocked(allUsers.deleteUser).mockRejectedValue(boomError)
+
+        const response = await server.inject({
+          method: 'DELETE',
+          url: '/users/456',
+          auth
+        })
+
+        expect(response.statusCode).toBe(404)
       })
     })
   })
 })
-
-/**
- * @import { Server } from '@hapi/hapi'
- */

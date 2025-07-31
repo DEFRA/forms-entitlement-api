@@ -11,7 +11,7 @@ ARG PORT_DEBUG
 ENV PORT ${PORT}
 EXPOSE ${PORT} ${PORT_DEBUG}
 
-COPY --chown=node:node packag*.json ./
+COPY --chown=node:node package*.json ./
 
 RUN npm ci
 

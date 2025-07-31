@@ -1,3 +1,5 @@
+import Boom from '@hapi/boom'
+
 import { RoleDetails, Roles } from '~/src/repositories/roles.js'
 import {
   createUserSchema,
@@ -23,7 +25,7 @@ export default [
     path: '/users',
     handler: async (request, h) => {
       const entities = await getAllUsers()
-      return h.response({ message: 'success', entities })
+      return h.response({ entities })
     }
   },
   {
@@ -31,7 +33,7 @@ export default [
     path: USER_BY_ID_PATH,
     handler: async (request, h) => {
       const entity = await getUser(request.params.userId)
-      return h.response({ message: 'success', entity })
+      return h.response({ entity })
     }
   },
   {
@@ -41,11 +43,27 @@ export default [
      * @param {CreateUserRequest} request
      */
     handler: async (request, h) => {
-      const result = await addUser(
-        request.payload.userId,
-        request.payload.roles
-      )
-      return h.response({ message: result.status, id: result.id })
+      try {
+        const result = await addUser(
+          request.payload.email,
+          request.payload.roles
+        )
+
+        const createdUser = await getUser(result.id)
+
+        return h.response({
+          id: result.id,
+          email: result.email,
+          displayName: result.displayName,
+          entity: createdUser
+        })
+      } catch (error) {
+        if (Boom.isBoom(error)) {
+          throw error
+        }
+
+        throw Boom.internal('An error occurred while processing your request')
+      }
     },
     options: {
       validate: {
@@ -60,11 +78,19 @@ export default [
      * @param {UpdateUserRequest} request
      */
     handler: async (request, h) => {
-      const result = await updateUser(
-        request.params.userId,
-        request.payload.roles
-      )
-      return h.response({ message: result.status, id: result.id })
+      try {
+        const result = await updateUser(
+          request.params.userId,
+          request.payload.roles
+        )
+        return h.response({ id: result.id })
+      } catch (error) {
+        if (Boom.isBoom(error)) {
+          throw error
+        }
+
+        throw Boom.internal('An error occurred while processing your request')
+      }
     },
     options: {
       validate: {
@@ -81,7 +107,7 @@ export default [
      */
     handler: async (request, h) => {
       const result = await deleteUser(request.params.userId)
-      return h.response({ message: result.status, id: result.id })
+      return h.response({ id: result.id })
     },
     options: {
       validate: {
@@ -97,11 +123,10 @@ export default [
         const roleDetails = RoleDetails[role[1]]
         return {
           name: roleDetails.name,
-          code: roleDetails.code,
-          description: roleDetails.description
+          code: roleDetails.code
         }
       })
-      return h.response({ message: 'success', roles })
+      return h.response({ roles })
     }
   }
 ]
