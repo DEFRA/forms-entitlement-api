@@ -473,6 +473,69 @@ describe('User service', () => {
         processAllAdminUsers(mockMembers, mockSession)
       ).rejects.toThrow('Transaction failed')
     })
+
+    it('should filter out users without userId when creating existingUsersMap', async () => {
+      const mockMembers = [
+        {
+          id: 'existing-user',
+          displayName: 'User 1',
+          email: 'user1@defra.gov.uk'
+        },
+        { id: 'new-user', displayName: 'User 2', email: 'user2@defra.gov.uk' }
+      ]
+
+      const mockUsersFromDb = [
+        {
+          _id: new ObjectId(),
+          userId: 'existing-user',
+          roles: [Roles.FormCreator],
+          scopes: [Scopes.FormRead]
+        },
+        {
+          _id: new ObjectId(),
+          roles: [Roles.Admin],
+          scopes: [Scopes.FormRead]
+        },
+        {
+          _id: new ObjectId(),
+          userId: undefined,
+          roles: [Roles.FormCreator],
+          scopes: [Scopes.FormRead]
+        },
+        {
+          _id: new ObjectId(),
+          userId: 'another-existing-user',
+          roles: [Roles.Admin],
+          scopes: [Scopes.FormRead]
+        }
+      ]
+
+      jest.mocked(getAll).mockResolvedValue(mockUsersFromDb)
+
+      await processAllAdminUsers(mockMembers, mockSession)
+
+      expect(mockSession.withTransaction).toHaveBeenCalled()
+
+      expect(update).toHaveBeenCalledWith(
+        'existing-user',
+        expect.objectContaining({
+          userId: 'existing-user',
+          roles: [Roles.FormCreator, Roles.Admin]
+        }),
+        mockSession
+      )
+
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'new-user',
+          roles: [Roles.Admin]
+        }),
+        mockSession
+      )
+
+      expect(update).toHaveBeenCalledTimes(1)
+      expect(create).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('syncAdminUsersFromGroup', () => {
