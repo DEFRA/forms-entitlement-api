@@ -130,11 +130,8 @@ export async function update(userId, user, session) {
       }
     )
 
-    // Throw if updated record count is not 1
-    if (result.modifiedCount !== 1) {
-      throw Boom.badRequest(
-        `User with ID '${userId}' not updated. Modified count ${result.modifiedCount}`
-      )
+    if (result.matchedCount === 0) {
+      throw Boom.notFound(`User with ID '${userId}' not found`)
     }
 
     logger.info(`User with ID '${userId}' updated`)
@@ -167,9 +164,7 @@ export async function remove(userId, session) {
   const { deletedCount } = result
 
   if (deletedCount !== 1) {
-    throw new Error(
-      `Failed to delete user ID '${userId}'. Expected deleted count of 1, received ${deletedCount}`
-    )
+    throw Boom.notFound(`User with ID '${userId}' not found`)
   }
 
   logger.info(`Removed user with ID '${userId}'`)

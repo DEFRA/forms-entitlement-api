@@ -45,19 +45,38 @@ services:
           "Events": { "RaiseErrorEvents": true, "RaiseSuccessEvents": true, "RaiseInformationEvents": true }
         }
     volumes:
-      - ./test/integration/postman/oidc-config:/data:ro
+      - ./test/integration/postman/oidc-config:/data
     networks:
       - forms_test_net
     healthcheck:
       test:
         [
-          'CMD-SHELL',
-          'wget -q --spider http://localhost:80/.well-known/openid-configuration || exit 1'
+          'CMD',
+          'wget',
+          '--spider',
+          '-q',
+          'http://localhost:80/.well-known/openid-configuration'
         ]
-      interval: 10s
-      timeout: 10s
-      retries: 18
+      interval: 5s
+      timeout: 5s
+      retries: 5
       start_period: 90s
+
+  seed_data:
+    build:
+      context: .
+      target: production
+    container_name: forms-entitlement-api-seed-test
+    environment:
+      MONGO_URI: mongodb://mongo_test:27017/forms-entitlement-api-test?replicaSet=rs0&directConnection=true
+    depends_on:
+      mongo_test:
+        condition: service_healthy
+    volumes:
+      - ./test:/home/node/test:ro
+    command: ['node', './test/integration/seed-data.js']
+    networks:
+      - forms_test_net
 
   app_test:
     build:
@@ -68,17 +87,22 @@ services:
       - '3003:3003'
     environment:
       MONGO_URI: mongodb://mongo_test:27017/forms-entitlement-api-test?replicaSet=rs0&directConnection=true
+      MONGO_DATABASE: forms-entitlement-api-test
       PORT: 3003
-      NODE_ENV: production
+      NODE_ENV: test
       OIDC_JWKS_URI: 'http://oidc:80/.well-known/openid-configuration/jwks'
       OIDC_VERIFY_AUD: 'newman-test-client'
       OIDC_VERIFY_ISS: 'http://oidc:80'
       ROLE_EDITOR_GROUP_ID: '7049296f-2156-4d61-8ac3-349276438ef9'
+      AZURE_CLIENT_ID: 'mock-client-id'
+      AZURE_CLIENT_SECRET: 'mock-client-secret'
+      AZURE_TENANT_ID: 'mock-tenant-id'
     depends_on:
       mongo_test:
         condition: service_healthy
       oidc:
         condition: service_started
+
     command: ['npm', 'start', '--ignore-scripts']
     networks:
       - forms_test_net
@@ -87,19 +111,26 @@ services:
     image: postman/newman:latest
     container_name: forms-entitlement-api-newman-test
     environment:
-      NEWMAN_TOKEN_URL: 'http://oidc:80/connect/token'
       NEWMAN_USERNAME: 'newman-service-account'
       NEWMAN_PASSWORD: 'newman-mock-password'
       NEWMAN_CLIENT_ID: 'newman-test-client'
       NEWMAN_CLIENT_SECRET: 'newman-mock-secret'
-      NEWMAN_SCOPE: 'openid profile email newman-test-client'
-      NEWMAN_TEST_EMAIL: 'test.email@defra.gov.uk'
-      API_URL: 'http://app_test:3003'
-    volumes:
-      - ./test/integration/postman:/etc/newman
-      - ./newman-reports:/etc/newman/reports
     depends_on:
       - app_test
+    volumes:
+      - ./test/integration/postman:/etc/newman
+    command:
+      [
+        'run',
+        '/etc/newman/forms-entitlement-api-ci-mock.postman_collection.json',
+        '-e',
+        '/etc/newman/forms-entitlement-api-ci-mock.postman_environment.json',
+        '-r',
+        'cli,json',
+        '--reporter-cli-no-failures',
+        '--reporter-json-export',
+        '/etc/newman/newman-summary.json'
+      ]
     networks:
       - forms_test_net
 
