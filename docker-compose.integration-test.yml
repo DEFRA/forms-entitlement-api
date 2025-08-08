@@ -84,11 +84,11 @@ services:
       target: production
     container_name: forms-entitlement-api-app-test
     ports:
-      - '3003:3003'
+      - '3004:3004'
     environment:
       MONGO_URI: mongodb://mongo_test:27017/forms-entitlement-api-test?replicaSet=rs0&directConnection=true
       MONGO_DATABASE: forms-entitlement-api-test
-      PORT: 3003
+      PORT: 3004
       NODE_ENV: test
       OIDC_JWKS_URI: 'http://oidc:80/.well-known/openid-configuration/jwks'
       OIDC_VERIFY_AUD: 'newman-test-client'
