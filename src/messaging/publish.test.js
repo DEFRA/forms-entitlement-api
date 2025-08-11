@@ -57,8 +57,8 @@ describe('publish', () => {
       jest.mocked(publishEvent).mockRejectedValue(new Error('rejected'))
       const invalidAzureUser = {}
 
-      // @ts-expect-error - invalid schema
       await expect(
+        // @ts-expect-error - invalid schema
         publishEntitlementCreatedEvent(invalidAzureUser, adminRole, callingUser)
       ).rejects.toThrow(new ValidationError('"entityId" is required', [], {}))
     })
@@ -89,8 +89,8 @@ describe('publish', () => {
       jest.mocked(publishEvent).mockRejectedValue(new Error('rejected'))
       const invalidAzureUser = {}
 
-      // @ts-expect-error - invalid schema
       await expect(
+        // @ts-expect-error - invalid schema
         publishEntitlementUpdatedEvent(invalidAzureUser, adminRole, callingUser)
       ).rejects.toThrow(new ValidationError('"entityId" is required', [], {}))
     })
@@ -121,8 +121,8 @@ describe('publish', () => {
       jest.mocked(publishEvent).mockRejectedValue(new Error('rejected'))
       const invalidAzureUser = {}
 
-      // @ts-expect-error - invalid schema
       await expect(
+        // @ts-expect-error - invalid schema
         publishEntitlementDeletedEvent(invalidAzureUser, callingUser)
       ).rejects.toThrow(new ValidationError('"entityId" is required', [], {}))
     })
