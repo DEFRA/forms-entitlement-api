@@ -271,7 +271,7 @@ docker build --target development --no-cache --tag forms-entitlement-api:develop
 Run:
 
 ```bash
-docker run -e PORT=3003 -p 3003:3003 forms-entitlement-api:development
+docker run -e PORT=3004 -p 3004:3004 forms-entitlement-api:development
 ```
 
 ### Production image
@@ -285,7 +285,7 @@ docker build --no-cache --tag forms-entitlement-api .
 Run:
 
 ```bash
-docker run -e PORT=3003 -p 3003:3003 forms-entitlement-api
+docker run -e PORT=3004 -p 3004:3004 forms-entitlement-api
 ```
 
 ### Docker Compose
