@@ -48,7 +48,8 @@ describe('publish', () => {
         data: {
           userId: azureUser.id,
           email: azureUser.email,
-          roles: adminRole
+          roles: adminRole,
+          displayName: azureUser.displayName
         }
       })
     })
@@ -60,7 +61,13 @@ describe('publish', () => {
       await expect(
         // @ts-expect-error - invalid schema
         publishEntitlementCreatedEvent(invalidAzureUser, adminRole, callingUser)
-      ).rejects.toThrow(new ValidationError('"entityId" is required', [], {}))
+      ).rejects.toThrow(
+        new ValidationError(
+          '"entityId" is required. "data.userId" is required. "data.displayName" is required. "data.email" is required',
+          [],
+          {}
+        )
+      )
     })
   })
 
@@ -80,7 +87,8 @@ describe('publish', () => {
         data: {
           userId: azureUser.id,
           email: azureUser.email,
-          roles: adminRole
+          roles: adminRole,
+          displayName: azureUser.displayName
         }
       })
     })
@@ -92,7 +100,13 @@ describe('publish', () => {
       await expect(
         // @ts-expect-error - invalid schema
         publishEntitlementUpdatedEvent(invalidAzureUser, adminRole, callingUser)
-      ).rejects.toThrow(new ValidationError('"entityId" is required', [], {}))
+      ).rejects.toThrow(
+        new ValidationError(
+          '"entityId" is required. "data.userId" is required. "data.displayName" is required. "data.email" is required',
+          [],
+          {}
+        )
+      )
     })
   })
 
@@ -112,7 +126,8 @@ describe('publish', () => {
         data: {
           userId: azureUser.id,
           email: azureUser.email,
-          roles: []
+          roles: [],
+          displayName: azureUser.displayName
         }
       })
     })
@@ -124,7 +139,13 @@ describe('publish', () => {
       await expect(
         // @ts-expect-error - invalid schema
         publishEntitlementDeletedEvent(invalidAzureUser, callingUser)
-      ).rejects.toThrow(new ValidationError('"entityId" is required', [], {}))
+      ).rejects.toThrow(
+        new ValidationError(
+          '"entityId" is required. "data.userId" is required. "data.displayName" is required. "data.email" is required',
+          [],
+          {}
+        )
+      )
     })
   })
 })

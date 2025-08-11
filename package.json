@@ -42,7 +42,7 @@
     "@aws-sdk/client-sns": "^3.848.0",
     "@azure/identity": "4.10.2",
     "@azure/msal-node": "3.6.4",
-    "@defra/forms-model": "^3.0.530",
+    "@defra/forms-model": "^3.0.532",
     "@defra/hapi-tracing": "^1.26.0",
     "@elastic/ecs-pino-format": "^1.5.0",
     "@hapi/hapi": "^21.4.0",

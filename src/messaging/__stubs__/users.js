@@ -1,6 +1,7 @@
 export const azureUser = /** @type {AzureUser} */ ({
   id: 'azure-user-id',
-  email: 'azure-email'
+  email: 'azure-email@azure.com',
+  displayName: 'Azure User'
 })
 
 export const callingUser = /** @type {AuditUser} */ ({

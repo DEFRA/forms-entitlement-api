@@ -16,6 +16,7 @@ export function entitlementBaseMapper(azureUser, roles, callingUser) {
   const data = {
     userId: azureUser.id,
     email: azureUser.email,
+    displayName: azureUser.displayName,
     roles
   }
   const now = new Date()

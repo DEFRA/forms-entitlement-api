@@ -7,7 +7,7 @@ import {
   mockUserList,
   mockUserListWithIds
 } from '~/src/api/__stubs__/users.js'
-import { callingUser } from '~/src/messaging/__stubs__/users.js'
+import { azureUser, callingUser } from '~/src/messaging/__stubs__/users.js'
 import { client, prepareDb } from '~/src/mongo.js'
 import { Roles } from '~/src/repositories/roles.js'
 import { Scopes } from '~/src/repositories/scopes.js'
@@ -321,7 +321,13 @@ describe('User service', () => {
   describe('deleteUser', () => {
     it('should delete user successfully', async () => {
       jest.mocked(remove).mockResolvedValue()
-      jest.mocked(get).mockResolvedValueOnce({ userId: 'found-user-id' })
+      jest
+        .mocked(get)
+        .mockResolvedValueOnce({
+          userId: azureUser.id,
+          email: azureUser.email,
+          displayName: azureUser.displayName
+        })
 
       const result = await deleteUser(mockUserId1, callingUser)
 

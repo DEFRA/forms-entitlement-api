@@ -33,7 +33,8 @@ describe('entitlement-events', () => {
         data: {
           userId: azureUser.id,
           email: azureUser.email,
-          roles: adminRole
+          roles: adminRole,
+          displayName: azureUser.displayName
         }
       })
     })
@@ -53,7 +54,8 @@ describe('entitlement-events', () => {
         data: {
           userId: azureUser.id,
           email: azureUser.email,
-          roles: adminRole
+          roles: adminRole,
+          displayName: azureUser.displayName
         }
       })
     })
@@ -71,7 +73,8 @@ describe('entitlement-events', () => {
         data: {
           userId: azureUser.id,
           email: azureUser.email,
-          roles: []
+          roles: [],
+          displayName: azureUser.displayName
         }
       })
     })
