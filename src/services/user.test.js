@@ -36,6 +36,7 @@ import {
   updateUser
 } from '~/src/services/user.js'
 
+jest.mock('~/src/messaging/publish.js')
 jest.mock('~/src/repositories/user-repository.js')
 jest.mock('~/src/mongo.js', () => ({
   client: {

@@ -15,24 +15,18 @@ const client = getSNSClient()
  * @param {AuditMessage} message
  */
 export async function publishEvent(message) {
-  const shouldPublish = config.get('publishAuditEvents')
+  const command = new PublishCommand({
+    TopicArn: snsTopicArn,
+    Message: JSON.stringify(message)
+  })
 
-  if (shouldPublish) {
-    const command = new PublishCommand({
-      TopicArn: snsTopicArn,
-      Message: JSON.stringify(message)
-    })
+  const result = await client.send(command)
 
-    const result = await client.send(command)
+  logger.info(
+    `Published ${message.type} event for formId ${message.entityId}. MessageId: ${result.MessageId}`
+  )
 
-    logger.info(
-      `Published ${message.type} event for formId ${message.entityId}. MessageId: ${result.MessageId}`
-    )
-
-    return result
-  }
-
-  return undefined
+  return result
 }
 
 /**

@@ -10,8 +10,7 @@ jest.mock('~/src/config/index.js', () => {
   const testConfig = {
     awsRegion: 'eu-west-2',
     snsEndpoint: 'http://localhost',
-    snsTopicArn: 'arn:aws:sns:eu-west-2:000000000000:forms_entitlement_events',
-    publishAuditEvents: true
+    snsTopicArn: 'arn:aws:sns:eu-west-2:000000000000:forms_entitlement_events'
   }
   return {
     config: {
@@ -42,13 +41,6 @@ describe('publish-base', () => {
     const message = buildFormCreatedMessage()
     afterEach(() => {
       jest.resetAllMocks()
-    })
-
-    it('should not publish if publish audit events feature flag is disabled', async () => {
-      jest.mocked(config.get).mockReturnValue(false)
-      const val = await publishEvent(message)
-      expect(val).toBeUndefined()
-      expect(snsMock).not.toHaveReceivedCommand(PublishCommand)
     })
 
     it('should publish', async () => {
