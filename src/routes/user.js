@@ -17,6 +17,8 @@ import {
 
 const USER_BY_ID_PATH = '/users/{userId}'
 
+const INTERNAL_ERROR_GENERIC = 'An error occurred while processing your request'
+
 /**
  * @type {ServerRoute[]}
  */
@@ -67,7 +69,7 @@ export default [
           throw error
         }
 
-        throw Boom.internal('An error occurred while processing your request')
+        throw Boom.internal(INTERNAL_ERROR_GENERIC)
       }
     },
     options: {
@@ -98,7 +100,7 @@ export default [
           throw error
         }
 
-        throw Boom.internal('An error occurred while processing your request')
+        throw Boom.internal(INTERNAL_ERROR_GENERIC)
       }
     },
     options: {
@@ -127,7 +129,7 @@ export default [
           throw error
         }
 
-        throw Boom.internal('An error occurred while processing your request')
+        throw Boom.internal(INTERNAL_ERROR_GENERIC)
       }
     },
     options: {

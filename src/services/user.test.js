@@ -321,13 +321,11 @@ describe('User service', () => {
   describe('deleteUser', () => {
     it('should delete user successfully', async () => {
       jest.mocked(remove).mockResolvedValue()
-      jest
-        .mocked(get)
-        .mockResolvedValueOnce({
-          userId: azureUser.id,
-          email: azureUser.email,
-          displayName: azureUser.displayName
-        })
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: azureUser.id,
+        email: azureUser.email,
+        displayName: azureUser.displayName
+      })
 
       const result = await deleteUser(mockUserId1, callingUser)
 
