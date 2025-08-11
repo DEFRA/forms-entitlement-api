@@ -188,6 +188,24 @@ export const config = convict({
       default: 'x-cdp-request-id',
       env: 'TRACING_HEADER'
     }
+  },
+  awsRegion: {
+    doc: 'AWS region',
+    format: String,
+    default: 'eu-west-2',
+    env: 'AWS_REGION'
+  },
+  snsEndpoint: {
+    doc: 'The SNS endpoint, if required (e.g. a local development dev service)',
+    format: String,
+    default: '',
+    env: 'SNS_ENDPOINT'
+  },
+  snsTopicArn: {
+    doc: 'SNS topic ARN',
+    format: String,
+    default: '',
+    env: 'SNS_TOPIC_ARN'
   }
 })
 

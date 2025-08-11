@@ -7,6 +7,7 @@ import {
   mockUserList,
   mockUserListWithIds
 } from '~/src/api/__stubs__/users.js'
+import { azureUser, callingUser } from '~/src/messaging/__stubs__/users.js'
 import { client, prepareDb } from '~/src/mongo.js'
 import { Roles } from '~/src/repositories/roles.js'
 import { Scopes } from '~/src/repositories/scopes.js'
@@ -35,6 +36,7 @@ import {
   updateUser
 } from '~/src/services/user.js'
 
+jest.mock('~/src/messaging/publish.js')
 jest.mock('~/src/repositories/user-repository.js')
 jest.mock('~/src/mongo.js', () => ({
   client: {
@@ -250,7 +252,7 @@ describe('User service', () => {
 
       const testEmail = 'test@defra.gov.uk'
       const rolesToAdd = [Roles.Admin]
-      const result = await addUser(testEmail, rolesToAdd)
+      const result = await addUser(testEmail, rolesToAdd, callingUser)
 
       expect(result.id).toBe(
         `user-${testEmail.replace('@', '-').replace('.', '-')}`
@@ -270,9 +272,9 @@ describe('User service', () => {
           /** @type {any} */ ({ getUserByEmail: mockGetUserByEmail })
         )
 
-      await expect(addUser('test@defra.gov.uk', [Roles.Admin])).rejects.toThrow(
-        'Azure AD error'
-      )
+      await expect(
+        addUser('test@defra.gov.uk', [Roles.Admin], callingUser)
+      ).rejects.toThrow('Azure AD error')
       expect(mockSession.endSession).toHaveBeenCalled()
     })
 
@@ -281,9 +283,9 @@ describe('User service', () => {
         new Error('Transaction failed')
       )
 
-      await expect(addUser('test@defra.gov.uk', [Roles.Admin])).rejects.toThrow(
-        'Transaction failed'
-      )
+      await expect(
+        addUser('test@defra.gov.uk', [Roles.Admin], callingUser)
+      ).rejects.toThrow('Transaction failed')
       expect(mockSession.endSession).toHaveBeenCalled()
     })
   })
@@ -298,7 +300,11 @@ describe('User service', () => {
         upsertedCount: 1
       })
 
-      const result = await updateUser(mockUserId1, [Roles.FormCreator])
+      const result = await updateUser(
+        mockUserId1,
+        [Roles.FormCreator],
+        callingUser
+      )
 
       expect(result.id).toBe(mockUserId1)
     })
@@ -306,9 +312,9 @@ describe('User service', () => {
     it('should handle database errors', async () => {
       mockSession.withTransaction.mockRejectedValue(new Error('Update failed'))
 
-      await expect(updateUser('123', [Roles.Admin])).rejects.toThrow(
-        'Update failed'
-      )
+      await expect(
+        updateUser('123', [Roles.Admin], callingUser)
+      ).rejects.toThrow('Update failed')
       expect(mockSession.endSession).toHaveBeenCalled()
     })
   })
@@ -316,8 +322,13 @@ describe('User service', () => {
   describe('deleteUser', () => {
     it('should delete user successfully', async () => {
       jest.mocked(remove).mockResolvedValue()
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: azureUser.id,
+        email: azureUser.email,
+        displayName: azureUser.displayName
+      })
 
-      const result = await deleteUser(mockUserId1)
+      const result = await deleteUser(mockUserId1, callingUser)
 
       expect(result.id).toBe(mockUserId1)
     })
@@ -325,7 +336,9 @@ describe('User service', () => {
     it('should handle database errors', async () => {
       mockSession.withTransaction.mockRejectedValue(new Error('Delete failed'))
 
-      await expect(deleteUser('123')).rejects.toThrow('Delete failed')
+      await expect(deleteUser('123', callingUser)).rejects.toThrow(
+        'Delete failed'
+      )
       expect(mockSession.endSession).toHaveBeenCalled()
     })
   })
