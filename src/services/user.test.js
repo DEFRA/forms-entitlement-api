@@ -7,8 +7,10 @@ import {
   mockUserList,
   mockUserListWithIds
 } from '~/src/api/__stubs__/users.js'
+import { config } from '~/src/config/index.js'
 import { azureUser, callingUser } from '~/src/messaging/__stubs__/users.js'
 import { client, prepareDb } from '~/src/mongo.js'
+import { withLock } from '~/src/repositories/lock-repository.js'
 import { Roles } from '~/src/repositories/roles.js'
 import { Scopes } from '~/src/repositories/scopes.js'
 import {
@@ -21,23 +23,19 @@ import {
 import * as azureAdModule from '~/src/services/azure-ad.js'
 import {
   addUser,
-  createMigrationResults,
   deleteUser,
-  finaliseMigrationResult,
   getAllUsers,
   getUser,
-  initialiseMigrationResources,
   mapUser,
   mapUsers,
-  migrateUsersFromAzureGroup,
   processAdminUser,
   processAllAdminUsers,
-  syncAdminUsersFromGroup,
   updateUser
 } from '~/src/services/user.js'
 
 jest.mock('~/src/messaging/publish.js')
 jest.mock('~/src/repositories/user-repository.js')
+jest.mock('~/src/repositories/lock-repository.js')
 jest.mock('~/src/mongo.js', () => ({
   client: {
     startSession: jest.fn()
@@ -53,7 +51,7 @@ jest.mock('~/src/helpers/logging/logger.js', () => ({
 }))
 jest.mock('~/src/config/index.js', () => ({
   config: {
-    get: jest.fn().mockReturnValue('test-group-id')
+    get: jest.fn()
   }
 }))
 
@@ -79,6 +77,13 @@ describe('User service', () => {
     }
 
     jest.mocked(client.startSession).mockReturnValue(mockSession)
+
+    // Mock the withLock function to just execute the callback
+    jest.mocked(withLock).mockImplementation(async (lockName, lockId, fn) => {
+      return await fn()
+    })
+
+    jest.mocked(config.get).mockReturnValue('test-group-id')
 
     const mockValidateUser = jest.fn().mockResolvedValue({
       id: 'test-user-id',
@@ -370,7 +375,7 @@ describe('User service', () => {
       )
     })
 
-    it('should add admin role to existing user without admin privileges', async () => {
+    it('should replace form-creator role with admin role only', async () => {
       const mockMember = {
         id: 'azure-user-1',
         displayName: 'Test User',
@@ -390,7 +395,61 @@ describe('User service', () => {
       expect(update).toHaveBeenCalledWith(
         'azure-user-1',
         expect.objectContaining({
-          roles: [Roles.FormCreator, Roles.Admin]
+          roles: [Roles.Admin]
+        }),
+        mockSession
+      )
+      expect(create).not.toHaveBeenCalled()
+    })
+
+    it('should replace all other roles with admin role only', async () => {
+      const mockMember = {
+        id: 'azure-user-1',
+        displayName: 'Test User',
+        email: 'test@example.com'
+      }
+
+      const existingUser = {
+        userId: 'azure-user-1',
+        roles: ['some-other-role', 'another-role'],
+        scopes: ['some-scope']
+      }
+
+      const existingUsersMap = new Map([['azure-user-1', existingUser]])
+
+      await processAdminUser(mockMember, mockSession, existingUsersMap)
+
+      expect(update).toHaveBeenCalledWith(
+        'azure-user-1',
+        expect.objectContaining({
+          roles: [Roles.Admin]
+        }),
+        mockSession
+      )
+      expect(create).not.toHaveBeenCalled()
+    })
+
+    it('should replace multiple roles including form-creator with admin only', async () => {
+      const mockMember = {
+        id: 'azure-user-1',
+        displayName: 'Test User',
+        email: 'test@example.com'
+      }
+
+      const existingUser = {
+        userId: 'azure-user-1',
+        roles: [Roles.FormCreator, Roles.Admin, 'other-role'],
+        scopes: ['some-scope']
+      }
+
+      const existingUsersMap = new Map([['azure-user-1', existingUser]])
+
+      await processAdminUser(mockMember, mockSession, existingUsersMap)
+
+      expect(update).toHaveBeenCalledWith(
+        'azure-user-1',
+        expect.objectContaining({
+          roles: [Roles.Admin]
         }),
         mockSession
       )
@@ -556,7 +615,7 @@ describe('User service', () => {
         'existing-user',
         expect.objectContaining({
           userId: 'existing-user',
-          roles: [Roles.FormCreator, Roles.Admin]
+          roles: [Roles.Admin]
         }),
         mockSession
       )
@@ -571,257 +630,6 @@ describe('User service', () => {
 
       expect(update).toHaveBeenCalledTimes(1)
       expect(create).toHaveBeenCalledTimes(1)
-    })
-  })
-
-  describe('syncAdminUsersFromGroup', () => {
-    it('should handle missing roleEditorGroupId config', async () => {
-      const { config } = await import('~/src/config/index.js')
-      jest.mocked(config.get).mockReturnValue(null)
-
-      await syncAdminUsersFromGroup()
-
-      expect(get).not.toHaveBeenCalled()
-    })
-
-    it('should complete successfully with valid config', async () => {
-      const { config } = await import('~/src/config/index.js')
-      jest.mocked(config.get).mockReturnValue('test-group-id')
-
-      await expect(syncAdminUsersFromGroup()).resolves.toBeUndefined()
-    })
-  })
-
-  describe('migrateUsersFromAzureGroup', () => {
-    it('should migrate users successfully with default role', async () => {
-      jest.mocked(get).mockRejectedValue(Boom.notFound('User not found'))
-      jest.mocked(create).mockResolvedValue({
-        acknowledged: true,
-        insertedId: new ObjectId()
-      })
-
-      const result = await migrateUsersFromAzureGroup()
-
-      expect(result.status).toBe('completed')
-      expect(result.summary.total).toBe(2)
-      expect(result.summary.successful).toBe(2)
-      expect(result.summary.failed).toBe(0)
-      expect(result.summary.skipped).toBe(0)
-      expect(result.results.successful).toHaveLength(2)
-      expect(create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          roles: [Roles.Admin]
-        }),
-        expect.any(Object)
-      )
-    })
-
-    it('should migrate users with custom roles', async () => {
-      jest.mocked(get).mockRejectedValue(Boom.notFound('User not found'))
-      jest.mocked(create).mockResolvedValue({
-        acknowledged: true,
-        insertedId: new ObjectId()
-      })
-
-      const result = await migrateUsersFromAzureGroup([Roles.Admin])
-
-      expect(result.status).toBe('completed')
-      expect(create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          roles: [Roles.Admin]
-        }),
-        expect.any(Object)
-      )
-    })
-
-    it('should skip existing users', async () => {
-      jest.mocked(get).mockImplementation((userId) => {
-        if (userId === 'azure-user-1') {
-          return Promise.resolve({
-            userId: 'azure-user-1',
-            roles: [Roles.FormCreator],
-            scopes: [Scopes.FormRead]
-          })
-        }
-        return Promise.reject(Boom.notFound('User not found'))
-      })
-      jest.mocked(create).mockResolvedValue({
-        acknowledged: true,
-        insertedId: new ObjectId()
-      })
-
-      const result = await migrateUsersFromAzureGroup()
-
-      expect(result.summary.successful).toBe(1)
-      expect(result.summary.skipped).toBe(1)
-      expect(result.results.skipped).toHaveLength(1)
-      expect(result.results.skipped[0].error).toBe('User already exists')
-    })
-
-    it('should handle migration errors gracefully', async () => {
-      jest.mocked(get).mockRejectedValue(Boom.notFound('User not found'))
-      jest.mocked(create).mockImplementation((user) => {
-        if (user.userId === 'azure-user-1') {
-          throw new Error('Database error')
-        }
-        return Promise.resolve({
-          acknowledged: true,
-          insertedId: new ObjectId()
-        })
-      })
-
-      const result = await migrateUsersFromAzureGroup()
-
-      expect(result.summary.successful).toBe(1)
-      expect(result.summary.failed).toBe(1)
-      expect(result.results.failed).toHaveLength(1)
-      expect(result.results.failed[0].error).toBe('Database error')
-    })
-
-    it('should log error and rethrow when migration fails', async () => {
-      const mockGetGroupMembers = jest
-        .fn()
-        .mockRejectedValue(new Error('Azure service unavailable'))
-      jest
-        .spyOn(azureAdModule, 'getAzureAdService')
-        .mockReturnValue(
-          /** @type {any} */ ({ getGroupMembers: mockGetGroupMembers })
-        )
-
-      await expect(migrateUsersFromAzureGroup()).rejects.toThrow(
-        'Azure service unavailable'
-      )
-    })
-  })
-
-  describe('initialiseMigrationResources', () => {
-    it('should return correct migration resources structure', () => {
-      const result = initialiseMigrationResources()
-
-      // Test that it returns the expected structure
-      expect(result).toHaveProperty('roleEditorGroupId')
-      expect(result).toHaveProperty('azureAdService')
-      expect(result).toHaveProperty('session')
-      expect(result.azureAdService).toHaveProperty('getGroupMembers')
-    })
-
-    it('should get fresh instances each time', () => {
-      const result1 = initialiseMigrationResources()
-      const result2 = initialiseMigrationResources()
-
-      expect(result1.session).toBe(mockSession)
-      expect(result2.session).toBe(mockSession)
-      expect(client.startSession).toHaveBeenCalledTimes(2)
-    })
-  })
-
-  describe('createMigrationResults', () => {
-    it('should return empty results structure', () => {
-      const result = createMigrationResults()
-
-      expect(result).toEqual({
-        successful: [],
-        failed: [],
-        skipped: []
-      })
-    })
-
-    it('should return new instance each time', () => {
-      const result1 = createMigrationResults()
-      const result2 = createMigrationResults()
-
-      expect(result1).not.toBe(result2)
-      expect(result1).toEqual(result2)
-    })
-  })
-
-  describe('finaliseMigrationResult', () => {
-    const mockAzureUsers = [
-      { id: 'user-1', displayName: 'User 1', email: 'user1@defra.gov.uk' },
-      { id: 'user-2', displayName: 'User 2', email: 'user2@defra.gov.uk' },
-      { id: 'user-3', displayName: 'User 3', email: 'user3@defra.gov.uk' }
-    ]
-
-    it('should return correct migration result structure', () => {
-      const mockResults = {
-        successful: [
-          {
-            userId: 'user-1',
-            displayName: 'User 1',
-            email: 'user1@defra.gov.uk',
-            roles: [Roles.FormCreator],
-            scopes: [Scopes.FormRead]
-          }
-        ],
-        failed: [
-          {
-            userId: 'user-2',
-            displayName: 'User 2',
-            email: 'user2@defra.gov.uk',
-            error: 'Database error'
-          }
-        ],
-        skipped: [
-          {
-            userId: 'user-3',
-            displayName: 'User 3',
-            email: 'user3@defra.gov.uk',
-            error: 'User already exists'
-          }
-        ]
-      }
-
-      const result = finaliseMigrationResult(mockAzureUsers, mockResults)
-
-      expect(result).toEqual({
-        status: 'completed',
-        summary: {
-          total: 3,
-          successful: 1,
-          failed: 1,
-          skipped: 1
-        },
-        results: mockResults
-      })
-    })
-
-    it('should handle empty results', () => {
-      const emptyResults = {
-        successful: [],
-        failed: [],
-        skipped: []
-      }
-
-      const result = finaliseMigrationResult([], emptyResults)
-
-      expect(result.summary.total).toBe(0)
-      expect(result.summary.successful).toBe(0)
-      expect(result.summary.failed).toBe(0)
-      expect(result.summary.skipped).toBe(0)
-    })
-
-    it('should handle all successful results', () => {
-      const allSuccessfulResults = {
-        successful: mockAzureUsers.map((user) => ({
-          userId: user.id,
-          displayName: user.displayName,
-          email: user.email,
-          roles: [Roles.FormCreator],
-          scopes: [Scopes.FormRead]
-        })),
-        failed: [],
-        skipped: []
-      }
-
-      const result = finaliseMigrationResult(
-        mockAzureUsers,
-        allSuccessfulResults
-      )
-
-      expect(result.summary.total).toBe(3)
-      expect(result.summary.successful).toBe(3)
-      expect(result.summary.failed).toBe(0)
-      expect(result.summary.skipped).toBe(0)
     })
   })
 })

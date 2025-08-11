@@ -1,5 +1,4 @@
-import Boom from '@hapi/boom'
-import { StatusCodes } from 'http-status-codes'
+import { randomUUID } from 'crypto'
 
 import { config } from '~/src/config/index.js'
 import { getErrorMessage } from '~/src/helpers/error-message.js'
@@ -10,6 +9,7 @@ import {
   publishEntitlementUpdatedEvent
 } from '~/src/messaging/publish.js'
 import { client } from '~/src/mongo.js'
+import { withLock } from '~/src/repositories/lock-repository.js'
 import { Roles } from '~/src/repositories/roles.js'
 import { mapScopesToRoles } from '~/src/repositories/scopes.js'
 import {
@@ -213,25 +213,6 @@ export async function deleteUser(userId, callingUser) {
 }
 
 /**
- * Check if user exists and return user data, or null if not found
- * @param {string} userId - User ID to check
- * @returns {Promise<Partial<UserEntitlementDocument>|null>} User data or null if not found
- */
-async function findExistingUser(userId) {
-  try {
-    return await get(userId)
-  } catch (error) {
-    if (
-      Boom.isBoom(error) &&
-      error.output.statusCode === Number(StatusCodes.NOT_FOUND)
-    ) {
-      return null
-    }
-    throw error
-  }
-}
-
-/**
  * Create a user with given roles (internal function used within transactions)
  * @param {string} userId - Azure AD user ID
  * @param {string[]} roles - Roles to assign
@@ -287,12 +268,14 @@ export async function processAdminUser(
 
   if (existingUser) {
     const userRoles = existingUser.roles ?? []
-    if (!userRoles.includes(Roles.Admin)) {
-      const updatedRoles = [...new Set([...userRoles, Roles.Admin])]
-      await updateUserInternal(member.id, updatedRoles, session)
-      logger.info(`Updated user with admin privileges: ${member.id}`)
+
+    if (userRoles.length !== 1 || !userRoles.includes(Roles.Admin)) {
+      await updateUserInternal(member.id, [Roles.Admin], session)
+      logger.info(
+        `Updated user to admin role only: ${member.id} (previous roles: ${userRoles.join(', ')})`
+      )
     } else {
-      logger.info(`User already has admin privileges: ${member.id}`)
+      logger.info(`User already has correct admin privileges: ${member.id}`)
     }
   } else {
     // User doesn't exist, create them with admin role
@@ -337,16 +320,11 @@ export async function processAllAdminUsers(groupMembers, session) {
 }
 
 /**
- * Sync admin users from Azure AD role editor group
- * Called on service startup to ensure admin access based on AD group membership
+ * Internal sync function (without locking)
+ * @private
  */
-export async function syncAdminUsersFromGroup() {
+async function syncAdminUsersInternal() {
   const roleEditorGroupId = config.get('roleEditorGroupId')
-
-  if (!roleEditorGroupId) {
-    logger.warn('No role editor group ID configured')
-    return
-  }
 
   logger.info(
     `Syncing admin users from role editor group: ${roleEditorGroupId}`
@@ -379,153 +357,31 @@ export async function syncAdminUsersFromGroup() {
 }
 
 /**
- * Process a single user for migration
- * @param {AzureUser} azureUser - Azure AD user to migrate
- * @param {string[]} roles - Roles to assign to the user
- * @param {{successful: MigratedUser[], failed: FailedUser[], skipped: FailedUser[]}} results - Results object to populate
- * @param {ClientSession} session - MongoDB session
+ * Sync admin users from Azure AD role editor group with locking
+ * Called on service startup and by scheduler to ensure admin access based on AD group membership
+ * Uses locking to prevent concurrent execution across multiple containers
  */
-async function processMigrationUser(azureUser, roles, results, session) {
-  const existingUser = await findExistingUser(azureUser.id)
+export async function syncAdminUsersFromGroup() {
+  const lockId = randomUUID()
+  const lockTimeoutMinutes = 30
 
-  if (existingUser) {
-    logger.info(`User ${azureUser.id} already exists, skipping`)
-    results.skipped.push({
-      userId: azureUser.id,
-      displayName: azureUser.displayName,
-      email: azureUser.email,
-      error: 'User already exists'
-    })
-    return
-  }
-
-  await createUserInternal(
-    azureUser.id,
-    roles,
-    session,
-    azureUser.email,
-    azureUser.displayName
+  const result = await withLock(
+    'admin-user-sync',
+    lockId,
+    syncAdminUsersInternal,
+    lockTimeoutMinutes
   )
 
-  results.successful.push({
-    userId: azureUser.id,
-    displayName: azureUser.displayName,
-    email: azureUser.email,
-    roles,
-    scopes: mapScopesToRoles(roles)
-  })
-
-  logger.info(`Successfully migrated user ${azureUser.id}`)
-}
-
-/**
- * Process all users for migration in a transaction
- * @param {AzureUser[]} azureUsers - Array of Azure AD users
- * @param {string[]} roles - Roles to assign
- * @param {{successful: MigratedUser[], failed: FailedUser[], skipped: FailedUser[]}} results - Results object to populate
- * @param {ClientSession} session - MongoDB session
- */
-async function processAllMigrationUsers(azureUsers, roles, results, session) {
-  await session.withTransaction(async () => {
-    for (const azureUser of azureUsers) {
-      try {
-        await processMigrationUser(azureUser, roles, results, session)
-      } catch (err) {
-        logger.error(
-          `Failed to migrate user ${azureUser.id}: ${getErrorMessage(err)}`
-        )
-        results.failed.push({
-          userId: azureUser.id,
-          displayName: azureUser.displayName,
-          email: azureUser.email,
-          error: getErrorMessage(err)
-        })
-      }
-    }
-  })
-}
-
-/**
- * Initialise migration resources
- * @returns {{roleEditorGroupId: string, azureAdService: any, session: any}} Migration resources
- */
-export function initialiseMigrationResources() {
-  const roleEditorGroupId = config.get('roleEditorGroupId')
-  const azureAdService = getAzureAdService()
-  const session = client.startSession()
-
-  return { roleEditorGroupId, azureAdService, session }
-}
-
-/**
- * Create initial results structure
- * @returns {{successful: MigratedUser[], failed: FailedUser[], skipped: FailedUser[]}} Empty results object
- */
-export function createMigrationResults() {
-  return {
-    successful: [],
-    failed: [],
-    skipped: []
-  }
-}
-
-/**
- * Log migration completion and create final result
- * @param {any[]} azureUsers - Array of Azure users
- * @param {{successful: MigratedUser[], failed: FailedUser[], skipped: FailedUser[]}} results - Migration results
- * @returns {MigrationResult} Final migration result
- */
-export function finaliseMigrationResult(azureUsers, results) {
-  logger.info(
-    `Migration completed: ${results.successful.length} successful, ${results.failed.length} failed, ${results.skipped.length} skipped`
-  )
-
-  return {
-    status: 'completed',
-    summary: {
-      total: azureUsers.length,
-      successful: results.successful.length,
-      failed: results.failed.length,
-      skipped: results.skipped.length
-    },
-    results
-  }
-}
-
-/**
- * Migrate users from Azure AD group to the entitlements api
- * @param {string[]} roles - Default roles to assign to migrated users
- * @returns {Promise<MigrationResult>} Migration results
- */
-export async function migrateUsersFromAzureGroup(roles = [Roles.Admin]) {
-  logger.info('Starting user migration from role editor Azure AD group')
-
-  const { roleEditorGroupId, azureAdService, session } =
-    initialiseMigrationResources()
-
-  try {
-    const azureUsers = await azureAdService.getGroupMembers(roleEditorGroupId)
+  if (result === null) {
     logger.info(
-      `Found ${azureUsers.length} users in role editor group for migration`
+      'Admin user sync skipped - already running on another container'
     )
-
-    const results = createMigrationResults()
-
-    await processAllMigrationUsers(azureUsers, roles, results, session)
-
-    return finaliseMigrationResult(azureUsers, results)
-  } catch (err) {
-    logger.error(`[migrateUsers] Migration failed - ${getErrorMessage(err)}`)
-    throw err
-  } finally {
-    await session.endSession()
   }
 }
 
 /**
  * @import { AuditUser } from '@defra/forms-model'
  * @import { UserEntitlementDocument } from '~/src/api/types.js'
- * @import { MigrationResult, MigratedUser, FailedUser } from '~/src/api/types.js'
  * @import { AzureUser } from '~/src/services/azure-ad.js'
  * @import { WithId, ClientSession } from 'mongodb'
  */

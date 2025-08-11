@@ -1,6 +1,9 @@
 import { createServer } from '~/src/api/server.js'
 
 jest.mock('~/src/mongo.js')
+jest.mock('~/src/services/scheduler.js', () => ({
+  initialiseAdminUserSync: jest.fn(() => null)
+}))
 
 describe('Health route', () => {
   /** @type {Server} */
