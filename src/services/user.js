@@ -4,6 +4,11 @@ import { StatusCodes } from 'http-status-codes'
 import { config } from '~/src/config/index.js'
 import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
+import {
+  publishEntitlementCreatedEvent,
+  publishEntitlementDeletedEvent,
+  publishEntitlementUpdatedEvent
+} from '~/src/messaging/publish.js'
 import { client } from '~/src/mongo.js'
 import { Roles } from '~/src/repositories/roles.js'
 import { mapScopesToRoles } from '~/src/repositories/scopes.js'
@@ -91,8 +96,9 @@ export async function getUser(userId) {
  * Add a user with Azure AD validation by email
  * @param {string} email - The user's email address
  * @param {string[]} roles
+ * @param {AuditUser} callingUser
  */
-export async function addUser(email, roles) {
+export async function addUser(email, roles, callingUser) {
   logger.info(`Adding user with email '${email}'`)
 
   const session = client.startSession()
@@ -112,6 +118,8 @@ export async function addUser(email, roles) {
       )
       return newUserEntity
     })
+
+    await publishEntitlementCreatedEvent(azureUser, roles, callingUser)
 
     logger.info(`Added user with Azure ID: ${azureUser.id}`)
 
@@ -133,17 +141,24 @@ export async function addUser(email, roles) {
  * Update a user
  * @param {string} userId
  * @param {string[]} roles
+ * @param {AuditUser} callingUser
  */
-export async function updateUser(userId, roles) {
+export async function updateUser(userId, roles, callingUser) {
   logger.info(`Updating user with userID '${userId}'`)
 
   const session = client.startSession()
 
   try {
+    const azureAdService = getAzureAdService()
+    const azureUser = await azureAdService.validateUser(userId)
+    logger.info(`User found in Azure AD with ID: ${azureUser.id}`)
+
     await session.withTransaction(async () => {
       const updatedUserEntity = await updateUserInternal(userId, roles, session)
       return updatedUserEntity
     })
+
+    await publishEntitlementUpdatedEvent(azureUser, roles, callingUser)
 
     logger.info(`Updated user with userID '${userId}'`)
 
@@ -162,16 +177,26 @@ export async function updateUser(userId, roles) {
 /**
  * Delete a user
  * @param {string} userId
+ * @param {AuditUser} callingUser
  */
-export async function deleteUser(userId) {
+export async function deleteUser(userId, callingUser) {
   logger.info(`Deleting user with userID '${userId}'`)
 
   const session = client.startSession()
 
   try {
+    const user = await findExistingUser(userId)
+    const azureUser = /** @type {AzureUser} */ ({
+      id: user?.userId,
+      displayName: user?.displayName,
+      email: user?.email
+    })
+
     await session.withTransaction(async () => {
       await remove(userId, session)
     })
+
+    await publishEntitlementDeletedEvent(azureUser, callingUser)
 
     logger.info(`Deleted user with userID '${userId}'`)
 
@@ -498,6 +523,7 @@ export async function migrateUsersFromAzureGroup(roles = [Roles.Admin]) {
 }
 
 /**
+ * @import { AuditUser } from '@defra/forms-model'
  * @import { UserEntitlementDocument } from '~/src/api/types.js'
  * @import { MigrationResult, MigratedUser, FailedUser } from '~/src/api/types.js'
  * @import { AzureUser } from '~/src/services/azure-ad.js'

@@ -1,5 +1,6 @@
 import Boom from '@hapi/boom'
 
+import { getCallingUser } from '~/src/helpers/auth-helper.js'
 import { RoleDetails, Roles } from '~/src/repositories/roles.js'
 import {
   createUserSchema,
@@ -44,9 +45,13 @@ export default [
      */
     handler: async (request, h) => {
       try {
+        const { auth } = request
+        const callingUser = getCallingUser(auth.credentials.user)
+
         const result = await addUser(
           request.payload.email,
-          request.payload.roles
+          request.payload.roles,
+          callingUser
         )
 
         const createdUser = await getUser(result.id)
@@ -79,9 +84,13 @@ export default [
      */
     handler: async (request, h) => {
       try {
+        const { auth } = request
+        const callingUser = getCallingUser(auth.credentials.user)
+
         const result = await updateUser(
           request.params.userId,
-          request.payload.roles
+          request.payload.roles,
+          callingUser
         )
         return h.response({ id: result.id })
       } catch (error) {
@@ -106,8 +115,20 @@ export default [
      * @param {DeleteUserRequest} request
      */
     handler: async (request, h) => {
-      const result = await deleteUser(request.params.userId)
-      return h.response({ id: result.id })
+      try {
+        const { auth } = request
+        const callingUser = getCallingUser(auth.credentials.user)
+
+        const result = await deleteUser(request.params.userId, callingUser)
+
+        return h.response({ id: result.id })
+      } catch (error) {
+        if (Boom.isBoom(error)) {
+          throw error
+        }
+
+        throw Boom.internal('An error occurred while processing your request')
+      }
     },
     options: {
       validate: {

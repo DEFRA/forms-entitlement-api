@@ -1,5 +1,4 @@
 import Boom from '@hapi/boom'
-import { beforeEach, describe, expect, jest, test } from '@jest/globals'
 
 import { createServer } from '~/src/api/server.js'
 import * as allUsers from '~/src/services/user.js'
@@ -7,6 +6,11 @@ import { auth } from '~/test/fixtures/auth.js'
 
 jest.mock('~/src/services/user.js')
 jest.mock('~/src/mongo.js')
+
+const expectedCallingUser = {
+  id: auth.credentials.user.oid,
+  displayName: 'Enrique Chase'
+}
 
 describe('User route', () => {
   /** @type {import('@hapi/hapi').Server} */
@@ -106,9 +110,11 @@ describe('User route', () => {
           }
         })
 
-        expect(allUsers.addUser).toHaveBeenCalledWith('test@example.com', [
-          'admin'
-        ])
+        expect(allUsers.addUser).toHaveBeenCalledWith(
+          'test@example.com',
+          ['admin'],
+          expectedCallingUser
+        )
         expect(allUsers.getUser).toHaveBeenCalledWith('456')
       })
     })
@@ -132,7 +138,11 @@ describe('User route', () => {
         expect(response.headers['content-type']).toContain(jsonContentType)
         expect(response.result).toEqual({ id: '456' })
 
-        expect(allUsers.updateUser).toHaveBeenCalledWith('456', ['admin'])
+        expect(allUsers.updateUser).toHaveBeenCalledWith(
+          '456',
+          ['admin'],
+          expectedCallingUser
+        )
       })
     })
 
@@ -152,7 +162,10 @@ describe('User route', () => {
         expect(response.headers['content-type']).toContain(jsonContentType)
         expect(response.result).toEqual({ id: '456' })
 
-        expect(allUsers.deleteUser).toHaveBeenCalledWith('456')
+        expect(allUsers.deleteUser).toHaveBeenCalledWith(
+          '456',
+          expectedCallingUser
+        )
       })
     })
 
@@ -286,6 +299,35 @@ describe('User route', () => {
         })
 
         expect(response.statusCode).toBe(404)
+      })
+
+      test('should return 500 when deleteUser fails with generic error', async () => {
+        jest
+          .mocked(allUsers.deleteUser)
+          .mockRejectedValue(new Error('Some error'))
+
+        const response = await server.inject({
+          method: 'DELETE',
+          url: '/users/12345',
+          auth,
+          payload: {}
+        })
+
+        expect(response.statusCode).toBe(500)
+      })
+
+      test('should re-throw Boom errors without modification', async () => {
+        const boomError = Boom.badRequest('Bad request')
+        jest.mocked(allUsers.deleteUser).mockRejectedValue(boomError)
+
+        const response = await server.inject({
+          method: 'DELETE',
+          url: '/users/12345',
+          auth,
+          payload: {}
+        })
+
+        expect(response.statusCode).toBe(400)
       })
     })
   })
