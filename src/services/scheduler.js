@@ -178,6 +178,7 @@ export function getSchedulerService() {
 /**
  * Initialise and configure the admin user sync scheduler
  * @param {Function} syncFunction - The sync function to schedule
+ * @returns {SchedulerService|null} The scheduler service instance or null if sync is disabled
  */
 export function initialiseAdminUserSync(syncFunction) {
   const scheduler = getSchedulerService()
@@ -186,7 +187,7 @@ export function initialiseAdminUserSync(syncFunction) {
   const cronSchedule = config.get('sync.adminUsers.cronSchedule')
 
   if (!syncEnabled) {
-    return
+    return null
   }
 
   const success = scheduler.scheduleTask(

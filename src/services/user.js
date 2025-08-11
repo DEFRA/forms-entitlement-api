@@ -1,5 +1,8 @@
 import { randomUUID } from 'crypto'
 
+import Boom from '@hapi/boom'
+import { StatusCodes } from 'http-status-codes'
+
 import { config } from '~/src/config/index.js'
 import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
@@ -185,11 +188,12 @@ export async function deleteUser(userId, callingUser) {
   const session = client.startSession()
 
   try {
-    const user = await getUser(userId)
+    const user = await findExistingUser(userId)
+
     const azureUser = /** @type {AzureUser} */ ({
-      id: user.userId,
-      displayName: user.displayName,
-      email: user.email
+      id: user?.userId,
+      displayName: user?.displayName,
+      email: user?.email
     })
 
     await session.withTransaction(async () => {
@@ -209,6 +213,25 @@ export async function deleteUser(userId, callingUser) {
     throw err
   } finally {
     await session.endSession()
+  }
+}
+
+/**
+ * Check if user exists and return user data, or null if not found
+ * @param {string} userId - User ID to check
+ * @returns {Promise<Partial<UserEntitlementDocument>|null>} User data or null if not found
+ */
+async function findExistingUser(userId) {
+  try {
+    return await get(userId)
+  } catch (error) {
+    if (
+      Boom.isBoom(error) &&
+      error.output.statusCode === Number(StatusCodes.NOT_FOUND)
+    ) {
+      return null
+    }
+    throw error
   }
 }
 

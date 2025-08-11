@@ -399,7 +399,7 @@ describe('SchedulerService', () => {
       const syncFunction = jest.fn()
       const result = initialiseAdminUserSync(syncFunction)
 
-      expect(result).toBeUndefined()
+      expect(result).toBeNull()
     })
 
     test('should throw error when scheduling fails', () => {
