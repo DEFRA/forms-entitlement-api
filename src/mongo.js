@@ -14,6 +14,7 @@ export let db
 export let client
 
 export const USER_COLLECTION_NAME = 'user-entitlement'
+export const SYNC_LOCKS_COLLECTION_NAME = 'sync-locks'
 
 /**
  * Connects to mongo database
@@ -39,9 +40,12 @@ export async function prepareDb(logger) {
   db = client.db(databaseName)
 
   // Ensure db indexes
-  const coll = db.collection(USER_COLLECTION_NAME)
+  const userColl = db.collection(USER_COLLECTION_NAME)
+  await userColl.createIndex({ userId: 1 }, { unique: true })
 
-  await coll.createIndex({ userId: 1 }, { unique: true })
+  const locksColl = db.collection(SYNC_LOCKS_COLLECTION_NAME)
+  await locksColl.createIndex({ lockName: 1 }, { unique: true })
+  await locksColl.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
 
   logger.info(`Mongodb connected to ${databaseName}`)
 

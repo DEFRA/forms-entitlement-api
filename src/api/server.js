@@ -11,6 +11,7 @@ import { requestTracing } from '~/src/helpers/request-tracing.js'
 import { prepareDb } from '~/src/mongo.js'
 import { auth } from '~/src/plugins/auth/index.js'
 import { router } from '~/src/plugins/router.js'
+import { scheduler } from '~/src/plugins/scheduler.js'
 import { prepareSecureContext } from '~/src/secure-context.js'
 
 const isProduction = config.get('isProduction')
@@ -68,6 +69,7 @@ export async function createServer() {
 
   await prepareDb(server.logger)
   await server.register(router)
+  await server.register(scheduler)
 
   return server
 }
