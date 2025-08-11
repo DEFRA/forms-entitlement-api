@@ -185,11 +185,11 @@ export async function deleteUser(userId, callingUser) {
   const session = client.startSession()
 
   try {
-    const user = await findExistingUser(userId)
+    const user = await getUser(userId)
     const azureUser = /** @type {AzureUser} */ ({
-      id: user?.userId,
-      displayName: user?.displayName,
-      email: user?.email
+      id: user.userId,
+      displayName: user.displayName,
+      email: user.email
     })
 
     await session.withTransaction(async () => {

@@ -330,7 +330,9 @@ describe('User service', () => {
       jest.mocked(get).mockResolvedValueOnce({
         userId: azureUser.id,
         email: azureUser.email,
-        displayName: azureUser.displayName
+        displayName: azureUser.displayName,
+        roles: [Roles.Admin],
+        scopes: [Scopes.FormRead]
       })
 
       const result = await deleteUser(mockUserId1, callingUser)
@@ -339,6 +341,14 @@ describe('User service', () => {
     })
 
     it('should handle database errors', async () => {
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: '123',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        roles: [Roles.Admin],
+        scopes: [Scopes.FormRead]
+      })
+
       mockSession.withTransaction.mockRejectedValue(new Error('Delete failed'))
 
       await expect(deleteUser('123', callingUser)).rejects.toThrow(
