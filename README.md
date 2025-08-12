@@ -58,7 +58,22 @@ docker compose up
 3. Create a `.env` file with the following mandatory environment variables populated at root level:
 
 ```text
-MONGO_URI=""
+MONGO_URI="mongodb://localhost:27017/?replicaSet=rs0&directConnection=true"
+
+# DefraDev
+OIDC_JWKS_URI="https://login.microsoftonline.com/<TENANT_HERE>/discovery/v2.0/keys"
+OIDC_VERIFY_AUD="<AUD_HERE>"
+OIDC_VERIFY_ISS="https://login.microsoftonline.com/<TENANT_HERE>/v2.0"
+ROLE_EDITOR_GROUP_ID="<GROUP_ID_TO_BE_INSERTED_HERE>"
+
+AZURE_CLIENT_ID="<CLIENT_ID_TO_BE_INSERTED_HERE>"
+AZURE_CLIENT_SECRET="<CLIENT_SECRET_TO_BE_INSERTED_HERE>"
+
+AWS_ACCESS_KEY_ID="dummy"
+AWS_SECRET_ACCESS_KEY="dummy"
+
+SNS_ENDPOINT="http://localhost:4566"
+SNS_TOPIC_ARN="arn:aws:sns:eu-west-2:000000000000:forms_entitlement_events"
 ```
 
 For proxy options, see https://www.npmjs.com/package/proxy-from-env which is used by https://github.com/TooTallNate/proxy-agents/tree/main/packages/proxy-agent. It's currently supports Hapi Wreck only, e.g. in the JWKS lookup.
