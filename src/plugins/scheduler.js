@@ -18,7 +18,6 @@ export const scheduler = {
         if (schedulerService) {
           schedulerService.start()
 
-          // @ts-expect-error - Adding scheduler to app context
           server.app.scheduler = schedulerService
 
           server.events.on('stop', () => {
@@ -31,7 +30,7 @@ export const scheduler = {
           server.logger.info(
             '[SchedulerPlugin] Scheduler disabled via configuration'
           )
-          // @ts-expect-error - Adding scheduler to app context
+
           server.app.scheduler = null
         }
       } catch (error) {

@@ -1,3 +1,4 @@
+import { LockManager } from 'mongo-locks'
 import { MongoClient } from 'mongodb'
 
 import { config } from '~/src/config/index.js'
@@ -13,8 +14,13 @@ export let db
  */
 export let client
 
+/**
+ * @type {LockManager}
+ */
+export let locker
+
 export const USER_COLLECTION_NAME = 'user-entitlement'
-export const SYNC_LOCKS_COLLECTION_NAME = 'sync-locks'
+export const MONGO_LOCKS_COLLECTION_NAME = 'mongo-locks'
 
 /**
  * Connects to mongo database
@@ -38,14 +44,14 @@ export async function prepareDb(logger) {
   )
 
   db = client.db(databaseName)
+  locker = new LockManager(db.collection(MONGO_LOCKS_COLLECTION_NAME))
 
   // Ensure db indexes
   const userColl = db.collection(USER_COLLECTION_NAME)
   await userColl.createIndex({ userId: 1 }, { unique: true })
 
-  const locksColl = db.collection(SYNC_LOCKS_COLLECTION_NAME)
-  await locksColl.createIndex({ lockName: 1 }, { unique: true })
-  await locksColl.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+  const locksColl = db.collection(MONGO_LOCKS_COLLECTION_NAME)
+  await locksColl.createIndex({ id: 1 })
 
   logger.info(`Mongodb connected to ${databaseName}`)
 

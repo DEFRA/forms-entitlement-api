@@ -1,6 +1,20 @@
 import { createServer } from '~/src/api/server.js'
 
-jest.mock('~/src/mongo.js')
+jest.mock('~/src/mongo.js', () => ({
+  client: {
+    startSession: () => ({
+      endSession: jest.fn().mockResolvedValue(undefined),
+      withTransaction: jest.fn((fn) => fn())
+    }),
+    close: jest.fn(() => Promise.resolve())
+  },
+  db: {},
+  locker: {
+    lock: jest.fn()
+  },
+  prepareDb: jest.fn(() => Promise.resolve())
+}))
+
 jest.mock('~/src/services/scheduler.js', () => ({
   initialiseAdminUserSync: jest.fn(() => null)
 }))

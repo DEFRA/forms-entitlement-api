@@ -79,8 +79,7 @@ describe('User service', () => {
 
     jest.mocked(client.startSession).mockReturnValue(mockSession)
 
-    // Mock the withLock function to just execute the callback
-    jest.mocked(withLock).mockImplementation(async (lockName, lockId, fn) => {
+    jest.mocked(withLock).mockImplementation(async (lockName, fn) => {
       return await fn()
     })
 
@@ -697,7 +696,7 @@ describe('User service', () => {
       jest
         .mocked(create)
         .mockResolvedValue(/** @type {any} */ ({ acknowledged: true }))
-      jest.mocked(withLock).mockImplementation(async (name, id, fn) => {
+      jest.mocked(withLock).mockImplementation(async (name, fn) => {
         return await fn()
       })
 
@@ -705,9 +704,7 @@ describe('User service', () => {
 
       expect(withLock).toHaveBeenCalledWith(
         'admin-user-sync',
-        expect.any(String),
-        expect.any(Function),
-        30
+        expect.any(Function)
       )
 
       expect(client.startSession).toHaveBeenCalled()
@@ -723,9 +720,7 @@ describe('User service', () => {
 
       expect(withLock).toHaveBeenCalledWith(
         'admin-user-sync',
-        expect.any(String),
-        expect.any(Function),
-        30
+        expect.any(Function)
       )
 
       expect(client.startSession).not.toHaveBeenCalled()
@@ -750,7 +745,7 @@ describe('User service', () => {
         })
       )
 
-      jest.mocked(withLock).mockImplementation(async (name, id, fn) => {
+      jest.mocked(withLock).mockImplementation(async (name, fn) => {
         return await fn()
       })
 
@@ -775,7 +770,7 @@ describe('User service', () => {
         })
       )
 
-      jest.mocked(withLock).mockImplementation(async (name, id, fn) => {
+      jest.mocked(withLock).mockImplementation(async (name, fn) => {
         return await fn()
       })
 

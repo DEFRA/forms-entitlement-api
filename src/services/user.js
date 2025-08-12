@@ -1,5 +1,3 @@
-import { randomUUID } from 'crypto'
-
 import Boom from '@hapi/boom'
 import { StatusCodes } from 'http-status-codes'
 
@@ -385,15 +383,7 @@ async function syncAdminUsersInternal() {
  * Uses locking to prevent concurrent execution across multiple containers
  */
 export async function syncAdminUsersFromGroup() {
-  const lockId = randomUUID()
-  const lockTimeoutMinutes = 30
-
-  const result = await withLock(
-    'admin-user-sync',
-    lockId,
-    syncAdminUsersInternal,
-    lockTimeoutMinutes
-  )
+  const result = await withLock('admin-user-sync', syncAdminUsersInternal)
 
   if (result === null) {
     logger.info(

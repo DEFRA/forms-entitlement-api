@@ -11,8 +11,11 @@ describe('Scheduler Routes', () => {
   /** @type {import('@hapi/hapi').Server} */
   let server
 
-  /** @type {{ triggerTask: jest.MockedFunction<(taskName: string) => Promise<boolean>> }} */
+  /** @type {{ start: jest.MockedFunction<() => void>, stop: jest.MockedFunction<() => void>, scheduleTask: jest.MockedFunction<(name: string, cronExpression: string, taskFunction: Function, runImmediately?: boolean) => boolean>, triggerTask: jest.MockedFunction<(taskName: string) => Promise<boolean>> }} */
   const mockScheduler = {
+    start: jest.fn(),
+    stop: jest.fn(),
+    scheduleTask: jest.fn(),
     triggerTask: jest.fn()
   }
 

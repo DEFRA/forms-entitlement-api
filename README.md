@@ -195,7 +195,7 @@ git config --global core.autocrlf false
 
 ### MongoDB Locks
 
-If you require a write lock for Mongo you can acquire it via `server.locker` or `request.locker`:
+The application uses the `mongo-locks` library for distributed locking. You can acquire locks via `server.locker` or `request.locker`:
 
 ```javascript
 async function doStuff(server) {
@@ -216,8 +216,7 @@ async function doStuff(server) {
 
 Keep it small and atomic.
 
-You may use **using** for the lock resource management.
-Note test coverage reports do not like that syntax.
+You may use **using** for automatic lock resource management:
 
 ```javascript
 async function doStuff(server) {
@@ -234,7 +233,7 @@ async function doStuff(server) {
 }
 ```
 
-Helper methods are also available in `/src/helpers/mongo-lock.js`.
+Helper methods are also available in `/src/repositories/lock-repository.js` for backward compatibility.
 
 ### Proxy
 

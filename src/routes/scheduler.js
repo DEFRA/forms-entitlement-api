@@ -23,7 +23,6 @@ const triggerAdminSync = /** @type {ServerRoute} */ ({
   },
   handler: async (request) => {
     try {
-      // @ts-expect-error - Adding scheduler to app context
       const scheduler = request.server.app.scheduler
 
       if (!scheduler) {
