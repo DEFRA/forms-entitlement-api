@@ -17,6 +17,7 @@ export let client
 /**
  * @type {LockManager}
  */
+// NOSONAR - Following  pattern for db and client exports
 export let locker
 
 export const USER_COLLECTION_NAME = 'user-entitlement'

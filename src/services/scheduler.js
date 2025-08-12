@@ -194,7 +194,7 @@ export function initialiseAdminUserSync(syncFunction) {
     'admin-user-sync',
     cronSchedule,
     syncFunction,
-    false // Don't run immediately since it already runs on startup
+    true
   )
 
   if (!success) {
