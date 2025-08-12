@@ -30,6 +30,7 @@ import {
   mapUsers,
   processAdminUser,
   processAllAdminUsers,
+  syncAdminUsersFromGroup,
   updateUser
 } from '~/src/services/user.js'
 
@@ -356,6 +357,20 @@ describe('User service', () => {
       )
       expect(mockSession.endSession).toHaveBeenCalled()
     })
+
+    it('should handle user not found (404) and still proceed with deletion', async () => {
+      const notFoundError = Boom.notFound('User not found')
+      jest.mocked(get).mockRejectedValue(notFoundError)
+      jest.mocked(remove).mockResolvedValue()
+
+      const result = await deleteUser('non-existent-user', callingUser)
+
+      expect(result).toBeDefined()
+
+      expect(get).toHaveBeenCalledWith('non-existent-user')
+      expect(remove).toHaveBeenCalledWith('non-existent-user', mockSession)
+      expect(mockSession.endSession).toHaveBeenCalled()
+    })
   })
 
   describe('processAdminUser', () => {
@@ -640,6 +655,138 @@ describe('User service', () => {
 
       expect(update).toHaveBeenCalledTimes(1)
       expect(create).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('syncAdminUsersFromGroup', () => {
+    beforeEach(() => {
+      jest.mocked(config.get).mockReturnValue('role-editor-group-id')
+      jest.clearAllMocks()
+    })
+
+    test('should successfully sync admin users when lock is acquired', async () => {
+      const mockGroupMembers = [
+        {
+          id: 'user-1',
+          displayName: 'User One',
+          email: 'user1@example.com'
+        },
+        {
+          id: 'user-2',
+          displayName: 'User Two',
+          email: 'user2@example.com'
+        }
+      ]
+
+      const mockSession = {
+        withTransaction: jest.fn((fn) => fn()),
+        endSession: jest.fn()
+      }
+
+      jest
+        .mocked(client.startSession)
+        .mockReturnValue(/** @type {any} */ (mockSession))
+
+      jest.spyOn(azureAdModule, 'getAzureAdService').mockReturnValue(
+        /** @type {any} */ ({
+          getGroupMembers: jest.fn().mockResolvedValue(mockGroupMembers)
+        })
+      )
+
+      jest.mocked(getAll).mockResolvedValue([])
+      jest
+        .mocked(create)
+        .mockResolvedValue(/** @type {any} */ ({ acknowledged: true }))
+      jest.mocked(withLock).mockImplementation(async (name, id, fn) => {
+        return await fn()
+      })
+
+      await syncAdminUsersFromGroup()
+
+      expect(withLock).toHaveBeenCalledWith(
+        'admin-user-sync',
+        expect.any(String),
+        expect.any(Function),
+        30
+      )
+
+      expect(client.startSession).toHaveBeenCalled()
+      expect(mockSession.endSession).toHaveBeenCalled()
+    })
+
+    test('should log info when lock is not acquired (already running)', async () => {
+      jest.mocked(withLock).mockResolvedValue(null)
+
+      const consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation()
+
+      await syncAdminUsersFromGroup()
+
+      expect(withLock).toHaveBeenCalledWith(
+        'admin-user-sync',
+        expect.any(String),
+        expect.any(Function),
+        30
+      )
+
+      expect(client.startSession).not.toHaveBeenCalled()
+
+      consoleInfoSpy.mockRestore()
+    })
+
+    test('should handle errors thrown during sync', async () => {
+      const mockError = new Error('Azure AD connection failed')
+      const mockSession = {
+        withTransaction: jest.fn((fn) => fn()),
+        endSession: jest.fn()
+      }
+
+      jest
+        .mocked(client.startSession)
+        .mockReturnValue(/** @type {any} */ (mockSession))
+
+      jest.spyOn(azureAdModule, 'getAzureAdService').mockReturnValue(
+        /** @type {any} */ ({
+          getGroupMembers: jest.fn().mockRejectedValue(mockError)
+        })
+      )
+
+      jest.mocked(withLock).mockImplementation(async (name, id, fn) => {
+        return await fn()
+      })
+
+      await expect(syncAdminUsersFromGroup()).rejects.toThrow(mockError)
+
+      expect(mockSession.endSession).toHaveBeenCalled()
+    })
+
+    test('should handle empty group members', async () => {
+      const mockSession = {
+        withTransaction: jest.fn((fn) => fn()),
+        endSession: jest.fn()
+      }
+
+      jest
+        .mocked(client.startSession)
+        .mockReturnValue(/** @type {any} */ (mockSession))
+
+      jest.spyOn(azureAdModule, 'getAzureAdService').mockReturnValue(
+        /** @type {any} */ ({
+          getGroupMembers: jest.fn().mockResolvedValue([])
+        })
+      )
+
+      jest.mocked(withLock).mockImplementation(async (name, id, fn) => {
+        return await fn()
+      })
+
+      await syncAdminUsersFromGroup()
+
+      expect(withLock).toHaveBeenCalled()
+
+      expect(client.startSession).toHaveBeenCalled()
+      expect(mockSession.endSession).toHaveBeenCalled()
+
+      expect(mockSession.withTransaction).not.toHaveBeenCalled()
     })
   })
 })
