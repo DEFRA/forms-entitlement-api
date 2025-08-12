@@ -7,7 +7,7 @@ import { locker } from '~/src/mongo.js'
  * @returns {Promise<any>} Result of the function execution or null if lock not acquired
  */
 export async function withLock(lockName, fn) {
-  const lock = await locker.lock(lockName)
+  const lock = await /** @type {any} */ (locker.locker).lock(lockName)
 
   if (!lock) {
     return null

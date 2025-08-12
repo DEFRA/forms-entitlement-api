@@ -15,10 +15,14 @@ export let db
 export let client
 
 /**
- * @type {LockManager}
+ * MongoDB connections holder
+ * @type {{ locker: LockManager | null }}
  */
-// NOSONAR - Following  pattern for db and client exports
-export let locker
+export const mongoConnections = {
+  locker: null
+}
+
+export const locker = mongoConnections
 
 export const USER_COLLECTION_NAME = 'user-entitlement'
 export const MONGO_LOCKS_COLLECTION_NAME = 'mongo-locks'
@@ -45,7 +49,9 @@ export async function prepareDb(logger) {
   )
 
   db = client.db(databaseName)
-  locker = new LockManager(db.collection(MONGO_LOCKS_COLLECTION_NAME))
+  mongoConnections.locker = new LockManager(
+    db.collection(MONGO_LOCKS_COLLECTION_NAME)
+  )
 
   // Ensure db indexes
   const userColl = db.collection(USER_COLLECTION_NAME)

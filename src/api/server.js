@@ -71,9 +71,14 @@ export async function createServer() {
 
   server.decorate('server', 'mongoClient', client)
   server.decorate('server', 'db', db)
-  server.decorate('server', 'locker', locker)
+  server.decorate('server', 'locker', /** @type {any} */ (locker.locker))
   server.decorate('request', 'db', () => db, { apply: true })
-  server.decorate('request', 'locker', () => locker, { apply: true })
+  server.decorate(
+    'request',
+    'locker',
+    () => /** @type {any} */ (locker.locker),
+    { apply: true }
+  )
 
   server.events.on('stop', () => {
     server.logger.info('Closing Mongo client')

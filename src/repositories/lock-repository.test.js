@@ -17,7 +17,9 @@ const buildMockLock = () => {
 const mockLockManager = buildMockLockManager()
 
 jest.mock('~/src/mongo.js', () => ({
-  locker: mockLockManager
+  locker: {
+    locker: mockLockManager
+  }
 }))
 
 describe('lock-repository', () => {

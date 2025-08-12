@@ -10,7 +10,9 @@ jest.mock('~/src/mongo.js', () => ({
   },
   db: {},
   locker: {
-    lock: jest.fn()
+    locker: {
+      lock: jest.fn()
+    }
   },
   prepareDb: jest.fn(() => Promise.resolve())
 }))

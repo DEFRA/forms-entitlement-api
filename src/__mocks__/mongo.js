@@ -26,7 +26,9 @@ export const db = {}
  * @type {any}
  */
 export const locker = {
-  lock: jest.fn()
+  locker: {
+    lock: jest.fn()
+  }
 }
 
 /**
