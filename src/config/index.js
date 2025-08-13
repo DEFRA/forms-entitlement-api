@@ -206,6 +206,22 @@ export const config = convict({
     format: String,
     default: '',
     env: 'SNS_TOPIC_ARN'
+  },
+  sync: {
+    adminUsers: {
+      enabled: {
+        doc: 'Enable periodic admin user sync from Azure AD group',
+        format: Boolean,
+        default: true,
+        env: 'SYNC_ADMIN_USERS_ENABLED'
+      },
+      cronSchedule: {
+        doc: 'Cron schedule for admin user sync (default: every 6 hours)',
+        format: String,
+        default: '0 */6 * * *',
+        env: 'SYNC_ADMIN_USERS_CRON'
+      }
+    }
   }
 })
 

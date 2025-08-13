@@ -2,8 +2,7 @@ export const HTTP_RESPONSE_MESSAGES = {
   PERMISSION_DENIED: 'Permission denied',
   USER_NOT_FOUND: 'User not found',
   VALIDATION_FAILED: 'User validation failed',
-  BATCH_VALIDATION_FAILED: 'Batch validation failed',
-  MIGRATION_FAILED: 'Migration failed'
+  BATCH_VALIDATION_FAILED: 'Batch validation failed'
 }
 
 export const GRAPH_ERROR_CODES = {

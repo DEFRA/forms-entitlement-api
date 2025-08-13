@@ -6,6 +6,9 @@ import { auth } from '~/test/fixtures/auth.js'
 
 jest.mock('~/src/services/user.js')
 jest.mock('~/src/mongo.js')
+jest.mock('~/src/services/scheduler.js', () => ({
+  initialiseAdminUserSync: jest.fn(() => null)
+}))
 
 const expectedCallingUser = {
   id: auth.credentials.user.oid,

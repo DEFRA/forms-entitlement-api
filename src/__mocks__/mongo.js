@@ -1,27 +1,40 @@
 /* eslint-env jest */
 
 /**
- * @type {Mocked<MongoClient>}
+ * @type {any}
  */
-export let client
+export const client = {
+  startSession: () => ({
+    endSession: jest.fn().mockResolvedValue(undefined),
+    withTransaction: jest.fn(
+      /**
+       * Mock transaction handler
+       * @param {() => Promise<void>} fn
+       */
+      async (fn) => fn()
+    )
+  }),
+  close: jest.fn().mockImplementation(() => Promise.resolve())
+}
+
+/**
+ * @type {any}
+ */
+export const db = {}
+
+/**
+ * @type {any}
+ */
+export const locker = {
+  locker: {
+    lock: jest.fn()
+  }
+}
 
 /**
  * Prepare the database and establish a connection
  */
 export function prepareDb() {
-  client = /** @satisfies {MongoClient} */ ({
-    startSession: () => ({
-      endSession: jest.fn().mockResolvedValue(undefined),
-      /* @ts-expect-error TODO: Fix types of parameters 'fn' and 'fn' are incompatible.  Type 'WithTransactionCallback<T>' is not assignable to type '() => Promise<void>'. Target signature provides too few arguments. Expected 1 or more, but got 0. */
-      withTransaction: jest.fn(
-        /**
-         * Mock transaction handler
-         * @param {() => Promise<void>} fn
-         */
-        async (fn) => fn()
-      )
-    })
-  })
   return Promise.resolve()
 }
 

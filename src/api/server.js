@@ -8,9 +8,10 @@ import { config } from '~/src/config/index.js'
 import { failAction } from '~/src/helpers/fail-action.js'
 import { requestLogger } from '~/src/helpers/logging/request-logger.js'
 import { requestTracing } from '~/src/helpers/request-tracing.js'
-import { prepareDb } from '~/src/mongo.js'
+import { client, db, locker, prepareDb } from '~/src/mongo.js'
 import { auth } from '~/src/plugins/auth/index.js'
 import { router } from '~/src/plugins/router.js'
+import { scheduler } from '~/src/plugins/scheduler.js'
 import { prepareSecureContext } from '~/src/secure-context.js'
 
 const isProduction = config.get('isProduction')
@@ -67,7 +68,33 @@ export async function createServer() {
   }
 
   await prepareDb(server.logger)
+
+  server.decorate('server', 'mongoClient', client)
+  server.decorate('server', 'db', db)
+  server.decorate('server', 'locker', /** @type {any} */ (locker.locker))
+  server.decorate('request', 'db', () => db, { apply: true })
+  server.decorate(
+    'request',
+    'locker',
+    () => /** @type {any} */ (locker.locker),
+    { apply: true }
+  )
+
+  server.events.on('stop', () => {
+    server.logger.info('Closing Mongo client')
+    try {
+      const closeResult = client.close(true)
+      // In production, this returns a Promise; in tests, it might not
+      Promise.resolve(closeResult).catch((/** @type {unknown} */ e) => {
+        server.logger.error(e, 'Failed to close mongo client')
+      })
+    } catch (error) {
+      server.logger.error(error, 'Error during client close')
+    }
+  })
+
   await server.register(router)
+  await server.register(scheduler)
 
   return server
 }

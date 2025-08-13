@@ -1,5 +1,5 @@
 import health from '~/src/routes/health.js'
-import migration from '~/src/routes/migration.js'
+import scheduler from '~/src/routes/scheduler.js'
 import user from '~/src/routes/user.js'
 
-export default [health, user, migration].flat()
+export default [health, user, scheduler].flat()
