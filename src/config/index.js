@@ -105,13 +105,13 @@ export const config = convict({
       env: 'MONGO_DATABASE'
     }
   },
-  httpProxy: {
+  httpProxy: /** @type {SchemaObj<string | null>} */ ({
     doc: 'HTTP Proxy',
     format: String,
     nullable: true,
     default: null,
     env: 'HTTP_PROXY'
-  },
+  }),
   httpsProxy: {
     doc: 'HTTPS Proxy',
     format: String,
