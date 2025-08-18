@@ -135,6 +135,7 @@ class AzureAdService {
       return users
     } catch (error) {
       logger.error(
+        error,
         `[azureFetchGroupMembers] Failed to fetch group members for ${groupId}: ${getErrorMessage(error)}`
       )
       throw Boom.internal(
@@ -174,6 +175,7 @@ class AzureAdService {
       return foundUser
     } catch (error) {
       logger.error(
+        error,
         `[azureGetUserByEmail] Failed to find user by email ${email}: ${getErrorMessage(error)}`
       )
       return handleGraphError(error, 'looking up user by email')
@@ -211,6 +213,7 @@ class AzureAdService {
       return validatedUser
     } catch (error) {
       logger.error(
+        error,
         `[azureValidateUser] Failed to validate user ${userId}: ${getErrorMessage(error)}`
       )
       return handleGraphError(error, `validating user ${userId}`)
