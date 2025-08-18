@@ -1,8 +1,6 @@
 import path from 'path'
 
 import hapi from '@hapi/hapi'
-import Wreck from '@hapi/wreck'
-import { ProxyAgent } from 'proxy-agent'
 
 import { config } from '~/src/config/index.js'
 import { failAction } from '~/src/helpers/fail-action.js'
@@ -13,21 +11,16 @@ import { auth } from '~/src/plugins/auth/index.js'
 import { router } from '~/src/plugins/router.js'
 import { scheduler } from '~/src/plugins/scheduler.js'
 import { prepareSecureContext } from '~/src/secure-context.js'
+import { setupProxy } from '~/src/utils/setup-proxy.js'
 
 const isProduction = config.get('isProduction')
-
-const proxyAgent = new ProxyAgent()
-
-Wreck.agents = {
-  https: proxyAgent,
-  http: proxyAgent,
-  httpsAllowUnauthorized: proxyAgent
-}
 
 /**
  * Creates the Hapi server
  */
 export async function createServer() {
+  setupProxy()
+
   const server = hapi.server({
     port: config.get('port'),
     routes: {

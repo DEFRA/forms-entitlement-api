@@ -76,7 +76,7 @@ SNS_ENDPOINT="http://localhost:4566"
 SNS_TOPIC_ARN="arn:aws:sns:eu-west-2:000000000000:forms_entitlement_events"
 ```
 
-For proxy options, see https://www.npmjs.com/package/proxy-from-env which is used by https://github.com/TooTallNate/proxy-agents/tree/main/packages/proxy-agent. It's currently supports Hapi Wreck only, e.g. in the JWKS lookup.
+For proxy options, see `~/src/utils/setup-proxy.js`. The proxy should be configured out of the box for most libraries (axios/request/undici/wreck).
 
 ### Development
 
