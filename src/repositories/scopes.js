@@ -4,7 +4,7 @@ import { Roles } from '~/src/repositories/roles.js'
  * @readonly
  * @enum {string}
  */
-export const Scopes {
+export const Scopes = {
   FormDelete: 'form-delete',
   FormEdit: 'form-edit',
   FormRead: 'form-read',
