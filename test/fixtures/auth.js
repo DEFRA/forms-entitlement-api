@@ -6,7 +6,6 @@ export const auth = {
       iss: 'https://login.microsoftonline.com/6f504113-6b64-43f2-ade9-242e05780007/v2.0',
       family_name: 'Chase',
       given_name: 'Enrique',
-      groups: ['7049296f-2156-4d61-8ac3-349276438ef9'],
       name: 'Enrique Chase (Defra)',
       scp: 'forms.user',
       sub: 'hgtL_1p2Me5JkBB6JeB20PyU3YDuP9PjEZwi7m1QGng',
