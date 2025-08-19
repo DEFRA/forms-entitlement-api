@@ -7,6 +7,7 @@ describe('Scopes', () => {
       'form-delete',
       'form-edit',
       'form-read',
+      'form-publish',
       'user-create',
       'user-delete',
       'user-edit'
@@ -20,6 +21,7 @@ describe('Scopes', () => {
       'form-delete',
       'form-edit',
       'form-read',
+      'form-publish',
       'user-create',
       'user-delete',
       'user-edit'
