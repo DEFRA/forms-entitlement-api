@@ -4,14 +4,14 @@ import { Roles } from '~/src/repositories/roles.js'
  * @readonly
  * @enum {string}
  */
-export enum Scopes {
-  FormDelete = 'form-delete',
-  FormEdit = 'form-edit',
-  FormRead = 'form-read',
-  FormPublish = 'form-publish',
-  UserCreate = 'user-create',
-  UserDelete = 'user-delete',
-  UserEdit = 'user-edit'
+export const Scopes {
+  FormDelete: 'form-delete',
+  FormEdit: 'form-edit',
+  FormRead: 'form-read',
+  FormPublish: 'form-publish',
+  UserCreate: 'user-create',
+  UserDelete: 'user-delete',
+  UserEdit: 'user-edit'
 }
 
 export const RoleScopes = {
