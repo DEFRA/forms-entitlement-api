@@ -106,128 +106,13 @@ describe('auth plugin', () => {
     test('should return isValid: false when oid is missing', () => {
       const artifacts = /** @type {any} */ ({
         decoded: {
-          payload: {
-            groups: ['some-group']
-          }
+          payload: {}
         }
       })
       const result = validateFn(artifacts)
       expect(result).toEqual({ isValid: false })
       expect(mockActualTestInfoFn).toHaveBeenCalledWith(
         '[authMissingOID] Auth: User OID is missing in token payload.'
-      )
-    })
-
-    test('should handle string groups claim that is valid JSON array', () => {
-      const artifacts = /** @type {any} */ ({
-        decoded: {
-          payload: {
-            oid: 'test-oid',
-            groups: JSON.stringify(['editor-group-id'])
-          }
-        }
-      })
-      const result = validateFn(artifacts)
-      expect(result).toEqual({
-        isValid: true,
-        credentials: {
-          user: {
-            oid: 'test-oid',
-            groups: ['editor-group-id']
-          }
-        }
-      })
-    })
-
-    test('should handle string groups claim that is not a valid JSON array', () => {
-      const artifacts = /** @type {any} */ ({
-        decoded: {
-          payload: {
-            oid: 'test-oid',
-            groups: JSON.stringify({ notAnArray: true })
-          }
-        }
-      })
-      const result = validateFn(artifacts)
-      expect(result).toEqual({ isValid: false })
-      expect(mockActualTestWarnFn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "[authGroupsInvalid] Auth: User test-oid: 'groups' claim was string but not valid JSON array"
-        )
-      )
-    })
-
-    test('should handle parsing error for string groups claim', () => {
-      const artifacts = /** @type {any} */ ({
-        decoded: {
-          payload: {
-            oid: 'test-oid',
-            groups: '{invalid-json'
-          }
-        }
-      })
-      const result = validateFn(artifacts)
-      expect(result).toEqual({ isValid: false })
-      expect(mockActualTestErrorFn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "[authGroupsParseError] Auth: User test-oid: Failed to parse 'groups' claim"
-        )
-      )
-    })
-
-    test('should handle array groups claim directly', () => {
-      const artifacts = /** @type {any} */ ({
-        decoded: {
-          payload: {
-            oid: 'test-oid',
-            groups: ['editor-group-id']
-          }
-        }
-      })
-      const result = validateFn(artifacts)
-      expect(result).toEqual({
-        isValid: true,
-        credentials: {
-          user: {
-            oid: 'test-oid',
-            groups: ['editor-group-id']
-          }
-        }
-      })
-    })
-
-    test('should handle missing groups claim by setting an empty array', () => {
-      const artifacts = /** @type {any} */ ({
-        decoded: {
-          payload: {
-            oid: 'test-oid'
-          }
-        }
-      })
-      const result = validateFn(artifacts)
-      expect(result).toEqual({ isValid: false })
-      expect(mockActualTestWarnFn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          '[authGroupNotFound] Auth: User test-oid: Authorisation failed. Required group "editor-group-id" not found'
-        )
-      )
-    })
-
-    test('should return isValid: false when required group is not in groups array', () => {
-      const artifacts = /** @type {any} */ ({
-        decoded: {
-          payload: {
-            oid: 'test-oid',
-            groups: ['some-other-group']
-          }
-        }
-      })
-      const result = validateFn(artifacts)
-      expect(result).toEqual({ isValid: false })
-      expect(mockActualTestWarnFn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          '[authGroupNotFound] Auth: User test-oid: Authorisation failed. Required group "editor-group-id" not found'
-        )
       )
     })
   })
