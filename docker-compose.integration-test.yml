@@ -62,6 +62,30 @@ services:
       retries: 5
       start_period: 90s
 
+  wiremock:
+    image: wiremock/wiremock:3.3.1
+    container_name: wiremock-test
+    ports:
+      - '80:80'
+      - '443:443'
+      - '8080:8080'
+    command:
+      [
+        '--global-response-templating',
+        '--verbose',
+        '--port',
+        '80',
+        '--https-port',
+        '443'
+      ]
+    volumes:
+      - ./test/integration/wiremock:/home/wiremock
+    networks:
+      forms_test_net:
+        aliases:
+          - graph.microsoft.com
+          - login.microsoftonline.com
+
   seed_data:
     build:
       context: .
@@ -97,12 +121,19 @@ services:
       AZURE_CLIENT_ID: 'mock-client-id'
       AZURE_CLIENT_SECRET: 'mock-client-secret'
       AZURE_TENANT_ID: 'mock-tenant-id'
+      SNS_TOPIC_ARN: ''
+      SNS_ENDPOINT: 'http://wiremock-test:80'
+      NODE_TLS_REJECT_UNAUTHORIZED: '0'
+      AWS_ACCESS_KEY_ID: 'mock-access-key'
+      AWS_SECRET_ACCESS_KEY: 'mock-secret-key'
+      AWS_REGION: 'us-east-1'
     depends_on:
       mongo_test:
         condition: service_healthy
       oidc:
         condition: service_started
-
+      wiremock:
+        condition: service_started
     command: ['npm', 'start', '--ignore-scripts']
     networks:
       - forms_test_net

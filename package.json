@@ -23,7 +23,7 @@
     "postversion": "git add package.json package-lock.json && git commit -m $npm_package_version",
     "test": "jest --color --coverage --verbose",
     "test:watch": "jest --color --watch",
-    "test:integration:setup": "docker compose -f docker-compose.integration-test.yml up -d oidc mongo_test",
+    "test:integration:setup": "docker compose -f docker-compose.integration-test.yml up -d oidc mongo_test wiremock",
     "test:integration:seed": "docker compose -f docker-compose.integration-test.yml run --rm seed_data",
     "test:integration:seed-local": "MONGO_URI=mongodb://localhost:27018/forms-entitlement-api-test?replicaSet=rs0&directConnection=true node test/integration/seed-data.js",
     "test:integration:start": "docker compose -f docker-compose.integration-test.yml up -d app_test",

@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/v1.0/users/user-email2-mail-com"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\n  \"id\": \"user-email2-mail-com\",\n  \"displayName\": \"Test User 2\",\n  \"givenName\": \"Test\",\n  \"surname\": \"User 2\",\n  \"mail\": \"user.email2@mail.com\",\n  \"userPrincipalName\": \"user.email2@mail.com\"\n}"
+  }
+}

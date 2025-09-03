@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/xml"
+    },
+    "body": "<?xml version=\"1.0\"?><PublishResponse xmlns=\"https://sns.amazonaws.com/doc/2010-03-31/\"><PublishResult><MessageId>mock-message-id</MessageId></PublishResult></PublishResponse>"
+  }
+}
