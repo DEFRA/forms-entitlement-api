@@ -46,9 +46,10 @@ class SchedulerService {
       const executeScheduledTask = async () => {
         try {
           await taskFunction()
-        } catch (error) {
+        } catch (err) {
           logger.error(
-            `[SchedulerService] Task '${name}' failed: ${getErrorMessage(error)}`
+            err,
+            `[SchedulerService] Task '${name}' failed: ${getErrorMessage(err)}`
           )
         }
       }
@@ -71,6 +72,7 @@ class SchedulerService {
         setImmediate(() => {
           executeScheduledTask().catch((/** @type {unknown} */ err) => {
             logger.error(
+              err,
               `[SchedulerService] Immediate task execution failed: ${getErrorMessage(err)}`
             )
           })
@@ -78,9 +80,10 @@ class SchedulerService {
       }
 
       return true
-    } catch (error) {
+    } catch (err) {
       logger.error(
-        `[SchedulerService] Failed to schedule task '${name}': ${getErrorMessage(error)}`
+        err,
+        `[SchedulerService] Failed to schedule task '${name}': ${getErrorMessage(err)}`
       )
       return false
     }
@@ -103,9 +106,10 @@ class SchedulerService {
       try {
         taskData.task.start()
         taskData.isRunning = true
-      } catch (error) {
+      } catch (err) {
         logger.error(
-          `[SchedulerService] Failed to start task '${name}': ${getErrorMessage(error)}`
+          err,
+          `[SchedulerService] Failed to start task '${name}': ${getErrorMessage(err)}`
         )
       }
     }
@@ -130,9 +134,10 @@ class SchedulerService {
       try {
         taskData.task.stop()
         taskData.isRunning = false
-      } catch (error) {
+      } catch (err) {
         logger.error(
-          `[SchedulerService] Failed to stop task '${name}': ${getErrorMessage(error)}`
+          err,
+          `[SchedulerService] Failed to stop task '${name}': ${getErrorMessage(err)}`
         )
       }
     }
@@ -155,9 +160,10 @@ class SchedulerService {
     try {
       await taskData.taskFunction()
       return true
-    } catch (error) {
+    } catch (err) {
       logger.error(
-        `[SchedulerService] Failed to trigger task '${name}': ${getErrorMessage(error)}`
+        err,
+        `[SchedulerService] Failed to trigger task '${name}': ${getErrorMessage(err)}`
       )
       return false
     }

@@ -78,11 +78,11 @@ export async function createServer() {
     try {
       const closeResult = client.close(true)
       // In production, this returns a Promise; in tests, it might not
-      Promise.resolve(closeResult).catch((/** @type {unknown} */ e) => {
-        server.logger.error(e, 'Failed to close mongo client')
+      Promise.resolve(closeResult).catch((/** @type {unknown} */ err) => {
+        server.logger.error(err, 'Failed to close mongo client')
       })
-    } catch (error) {
-      server.logger.error(error, 'Error during client close')
+    } catch (err) {
+      server.logger.error(err, 'Error during client close')
     }
   })
 

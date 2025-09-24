@@ -53,16 +53,17 @@ export async function get(userId, session = undefined) {
     logger.info(`User with ID ${userId} found`)
 
     return document
-  } catch (error) {
+  } catch (err) {
     logger.error(
-      `[getUserById] Getting user with ID '${userId}' failed - ${getErrorMessage(error)}`
+      err,
+      `[getUserById] Getting user with ID '${userId}' failed - ${getErrorMessage(err)}`
     )
 
-    if (error instanceof Error && !Boom.isBoom(error)) {
-      throw Boom.badRequest(error)
+    if (err instanceof Error && !Boom.isBoom(err)) {
+      throw Boom.badRequest(err)
     }
 
-    throw error
+    throw err
   }
 }
 
@@ -84,12 +85,12 @@ export async function create(document, session) {
     logger.info(`User created with user ID '${document.userId}'`)
 
     return result
-  } catch (cause) {
+  } catch (err) {
     const message = `Creating user failed for user ID '${document.userId}'`
 
     if (
-      cause instanceof MongoServerError &&
-      cause.code === DUPLICATE_DOCUMENT_CODE
+      err instanceof MongoServerError &&
+      err.code === DUPLICATE_DOCUMENT_CODE
     ) {
       logger.info(
         `[duplicateUser] Creating user with user ID '${document.userId}' failed - user already exists`
@@ -97,14 +98,15 @@ export async function create(document, session) {
       throw Boom.conflict('User already exists')
     }
 
-    if (cause instanceof MongoServerError) {
+    if (err instanceof MongoServerError) {
       logger.error(
-        `[mongoError] ${message} - MongoDB error code: ${cause.code} - ${cause.message}`
+        err,
+        `[mongoError] ${message} - MongoDB error code: ${err.code} - ${err.message}`
       )
     } else {
-      logger.error(`[updateError] ${message} - ${getErrorMessage(cause)}`)
+      logger.error(err, `[updateError] ${message} - ${getErrorMessage(err)}`)
     }
-    throw cause
+    throw err
   }
 }
 
@@ -137,16 +139,17 @@ export async function update(userId, user, session) {
     logger.info(`User with ID '${userId}' updated`)
 
     return result
-  } catch (error) {
+  } catch (err) {
     logger.error(
-      `[updateUser] Updating user with ID '${userId}' failed - ${getErrorMessage(error)}`
+      err,
+      `[updateUser] Updating user with ID '${userId}' failed - ${getErrorMessage(err)}`
     )
 
-    if (error instanceof Error && !Boom.isBoom(error)) {
-      throw Boom.internal(error)
+    if (err instanceof Error && !Boom.isBoom(err)) {
+      throw Boom.internal(err)
     }
 
-    throw error
+    throw err
   }
 }
 

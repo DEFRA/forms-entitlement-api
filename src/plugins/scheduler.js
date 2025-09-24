@@ -33,11 +33,12 @@ export const scheduler = {
 
           server.app.scheduler = null
         }
-      } catch (error) {
+      } catch (err) {
         server.logger.error(
-          `[SchedulerPlugin] Failed to initialize scheduler: ${getErrorMessage(error)}`
+          err,
+          `[SchedulerPlugin] Failed to initialize scheduler: ${getErrorMessage(err)}`
         )
-        throw error
+        throw err
       }
     }
   }

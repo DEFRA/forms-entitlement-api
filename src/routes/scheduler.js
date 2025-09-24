@@ -43,11 +43,12 @@ const triggerAdminSync = /** @type {ServerRoute} */ ({
         status: 'success',
         message: 'Admin user sync triggered successfully'
       }
-    } catch (error) {
+    } catch (err) {
       logger.error(
-        `[SchedulerRoute] Failed to trigger admin user sync: ${getErrorMessage(error)}`
+        err,
+        `[SchedulerRoute] Failed to trigger admin user sync: ${getErrorMessage(err)}`
       )
-      throw error
+      throw err
     }
   }
 })
