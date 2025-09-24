@@ -1,15 +1,17 @@
+import { getErrorMessage } from '@defra/forms-model'
+
 import { createServer } from '~/src/api/server.js'
 import { config } from '~/src/config/index.js'
-import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 
 const logger = createLogger()
 
-process.on('unhandledRejection', (error) => {
+process.on('unhandledRejection', (err) => {
   logger.error(
-    `[unhandledRejection] Unhandled rejection - ${getErrorMessage(error)}`
+    err,
+    `[unhandledRejection] Unhandled rejection - ${getErrorMessage(err)}`
   )
-  throw error
+  throw err
 })
 
 /**

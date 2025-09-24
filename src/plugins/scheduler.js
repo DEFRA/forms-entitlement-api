@@ -1,4 +1,5 @@
-import { getErrorMessage } from '~/src/helpers/error-message.js'
+import { getErrorMessage } from '@defra/forms-model'
+
 import { initialiseAdminUserSync } from '~/src/services/scheduler.js'
 import { syncAdminUsersFromGroup } from '~/src/services/user.js'
 
@@ -33,11 +34,12 @@ export const scheduler = {
 
           server.app.scheduler = null
         }
-      } catch (error) {
+      } catch (err) {
         server.logger.error(
-          `[SchedulerPlugin] Failed to initialize scheduler: ${getErrorMessage(error)}`
+          err,
+          `[SchedulerPlugin] Failed to initialize scheduler: ${getErrorMessage(err)}`
         )
-        throw error
+        throw err
       }
     }
   }

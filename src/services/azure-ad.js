@@ -1,4 +1,5 @@
 import { ClientSecretCredential } from '@azure/identity'
+import { getErrorMessage } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 import { Client } from '@microsoft/microsoft-graph-client'
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js'
@@ -9,7 +10,6 @@ import {
   GRAPH_ERROR_CODES,
   HTTP_RESPONSE_MESSAGES
 } from '~/src/helpers/azure-error-constants.js'
-import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 
 const logger = createLogger()
@@ -133,13 +133,13 @@ class AzureAdService {
         `[azureFetchGroupMembers] Found ${users.length} users in group ${groupId}`
       )
       return users
-    } catch (error) {
+    } catch (err) {
       logger.error(
-        error,
-        `[azureFetchGroupMembers] Failed to fetch group members for ${groupId}: ${getErrorMessage(error)}`
+        err,
+        `[azureFetchGroupMembers] Failed to fetch group members for ${groupId}: ${getErrorMessage(err)}`
       )
       throw Boom.internal(
-        `Failed to fetch group members: ${getErrorMessage(error)}`
+        `Failed to fetch group members: ${getErrorMessage(err)}`
       )
     }
   }
@@ -173,12 +173,12 @@ class AzureAdService {
 
       logger.info(`[azureGetUserByEmail] Found user: ${user.id} (${email})`)
       return foundUser
-    } catch (error) {
+    } catch (err) {
       logger.error(
-        error,
-        `[azureGetUserByEmail] Failed to find user by email ${email}: ${getErrorMessage(error)}`
+        err,
+        `[azureGetUserByEmail] Failed to find user by email ${email}: ${getErrorMessage(err)}`
       )
-      return handleGraphError(error, 'looking up user by email')
+      return handleGraphError(err, 'looking up user by email')
     }
   }
 
@@ -211,12 +211,12 @@ class AzureAdService {
 
       logger.info(`[azureValidateUser] User validated: ${userId}`)
       return validatedUser
-    } catch (error) {
+    } catch (err) {
       logger.error(
-        error,
-        `[azureValidateUser] Failed to validate user ${userId}: ${getErrorMessage(error)}`
+        err,
+        `[azureValidateUser] Failed to validate user ${userId}: ${getErrorMessage(err)}`
       )
-      return handleGraphError(error, `validating user ${userId}`)
+      return handleGraphError(err, `validating user ${userId}`)
     }
   }
 }

@@ -21,7 +21,7 @@ jest.mock('~/src/services/user.js', () => ({
 }))
 
 const mockGetErrorMessage = jest.fn()
-jest.mock('~/src/helpers/error-message.js', () => ({
+jest.mock('@defra/forms-model', () => ({
   getErrorMessage: mockGetErrorMessage
 }))
 
@@ -114,6 +114,7 @@ describe('scheduler plugin', () => {
       }).toThrow(testError)
 
       expect(mockErrorFn).toHaveBeenCalledWith(
+        new Error('Initialization failed'),
         '[SchedulerPlugin] Failed to initialize scheduler: Initialization failed'
       )
 
@@ -216,6 +217,7 @@ describe('scheduler plugin', () => {
       }).toThrow(customError)
 
       expect(mockErrorFn).toHaveBeenCalledWith(
+        new Error('Type error occurred'),
         '[SchedulerPlugin] Failed to initialize scheduler: Type error occurred'
       )
     })

@@ -1,8 +1,8 @@
+import { getErrorMessage } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 import { StatusCodes } from 'http-status-codes'
 
 import { config } from '~/src/config/index.js'
-import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 import {
   publishEntitlementCreatedEvent,
@@ -69,7 +69,10 @@ export async function getAllUsers() {
   try {
     return mapUsers(await getAll())
   } catch (err) {
-    logger.error(`[getUser] Failed to get all users - ${getErrorMessage(err)}`)
+    logger.error(
+      err,
+      `[getUser] Failed to get all users - ${getErrorMessage(err)}`
+    )
 
     throw err
   }
@@ -130,7 +133,7 @@ export async function addUser(email, roles, callingUser) {
       displayName: azureUser.displayName
     }
   } catch (err) {
-    logger.error(`[addUser] Failed to add user - ${getErrorMessage(err)}`)
+    logger.error(err, `[addUser] Failed to add user - ${getErrorMessage(err)}`)
 
     throw err
   } finally {
@@ -167,7 +170,10 @@ export async function updateUser(userId, roles, callingUser) {
       id: userId
     }
   } catch (err) {
-    logger.error(`[updateUser] Failed to update user - ${getErrorMessage(err)}`)
+    logger.error(
+      err,
+      `[updateUser] Failed to update user - ${getErrorMessage(err)}`
+    )
 
     throw err
   } finally {
@@ -206,7 +212,10 @@ export async function deleteUser(userId, callingUser) {
       id: userId
     }
   } catch (err) {
-    logger.error(`[deleteUser] Failed to delete user - ${getErrorMessage(err)}`)
+    logger.error(
+      err,
+      `[deleteUser] Failed to delete user - ${getErrorMessage(err)}`
+    )
 
     throw err
   } finally {
@@ -333,6 +342,7 @@ export async function processAllAdminUsers(groupMembers, session) {
         await processAdminUser(member, session, existingUsersMap)
       } catch (err) {
         logger.error(
+          err,
           `Failed to process admin user ${member.id}: ${getErrorMessage(err)}`
         )
       }
@@ -369,6 +379,7 @@ async function syncAdminUsersInternal() {
     logger.info('Admin user sync completed successfully')
   } catch (err) {
     logger.error(
+      err,
       `Failed to sync admin users from group: ${getErrorMessage(err)}`
     )
     throw err
