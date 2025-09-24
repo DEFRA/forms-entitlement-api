@@ -34,11 +34,6 @@ jest.mock('~/src/helpers/logging/logger.js', () => ({
   })
 }))
 
-jest.mock('~/src/helpers/error-message.js', () => ({
-  getErrorMessage: (/** @type {{ message: string; }} */ error) =>
-    error instanceof Error ? error.message : error
-}))
-
 describe('SchedulerService', () => {
   beforeEach(() => {
     jest.clearAllMocks()

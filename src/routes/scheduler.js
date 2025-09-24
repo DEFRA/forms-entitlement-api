@@ -1,6 +1,6 @@
+import { getErrorMessage } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 
-import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 
 const logger = createLogger()

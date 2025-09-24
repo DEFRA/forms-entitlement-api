@@ -1,6 +1,7 @@
 import { chdir } from 'node:process'
 
-import { getErrorMessage } from '~/src/helpers/error-message.js'
+import { getErrorMessage } from '@defra/forms-model'
+
 import { createLogger } from '~/src/helpers/logging/logger.js'
 
 const logger = createLogger()

@@ -1,4 +1,5 @@
 import { ClientSecretCredential } from '@azure/identity'
+import { getErrorMessage } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 import { Client } from '@microsoft/microsoft-graph-client'
 import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js'
@@ -9,7 +10,6 @@ import {
   GRAPH_ERROR_CODES,
   HTTP_RESPONSE_MESSAGES
 } from '~/src/helpers/azure-error-constants.js'
-import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 
 const logger = createLogger()

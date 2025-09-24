@@ -1,7 +1,7 @@
+import { getErrorMessage } from '@defra/forms-model'
 import cron from 'node-cron'
 
 import { config } from '~/src/config/index.js'
-import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 
 const logger = createLogger()

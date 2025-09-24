@@ -21,7 +21,7 @@ jest.mock('~/src/services/user.js', () => ({
 }))
 
 const mockGetErrorMessage = jest.fn()
-jest.mock('~/src/helpers/error-message.js', () => ({
+jest.mock('@defra/forms-model', () => ({
   getErrorMessage: mockGetErrorMessage
 }))
 

@@ -1,7 +1,7 @@
+import { getErrorMessage } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 import { MongoServerError } from 'mongodb'
 
-import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 import { USER_COLLECTION_NAME, db } from '~/src/mongo.js'
 

@@ -1,4 +1,5 @@
-import { getErrorMessage } from '~/src/helpers/error-message.js'
+import { getErrorMessage } from '@defra/forms-model'
+
 import { initialiseAdminUserSync } from '~/src/services/scheduler.js'
 import { syncAdminUsersFromGroup } from '~/src/services/user.js'
 

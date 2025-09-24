@@ -1,8 +1,8 @@
+import { getErrorMessage } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 import { StatusCodes } from 'http-status-codes'
 
 import { config } from '~/src/config/index.js'
-import { getErrorMessage } from '~/src/helpers/error-message.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 import {
   publishEntitlementCreatedEvent,
