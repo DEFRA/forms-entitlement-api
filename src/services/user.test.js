@@ -293,6 +293,23 @@ describe('User service', () => {
       ).rejects.toThrow('Transaction failed')
       expect(mockSession.endSession).toHaveBeenCalled()
     })
+
+    it('should handle user not found errors', async () => {
+      const mockGetUserByEmail = jest
+        .fn()
+        .mockRejectedValue(Boom.notFound('User not found'))
+
+      jest
+        .spyOn(azureAdModule, 'getAzureAdService')
+        .mockReturnValue(
+          /** @type {any} */ ({ getUserByEmail: mockGetUserByEmail })
+        )
+
+      await expect(
+        addUser('test@defra.gov.uk', [Roles.Admin], callingUser)
+      ).rejects.toThrow('User not found')
+      expect(mockSession.endSession).toHaveBeenCalled()
+    })
   })
 
   describe('updateUser', () => {

@@ -46,14 +46,24 @@ function isForbiddenError(errorCode, statusCode) {
 }
 
 /**
+ * Get the error and status codes
+ * @param {any} error - Graph SDK error
+ */
+function getErrorInfo(error) {
+  const errorCode = error.code ?? error.error?.code
+  const statusCode = error.statusCode ?? error.status
+
+  return { errorCode, statusCode }
+}
+
+/**
  * Convert Microsoft Graph SDK errors to appropriate Boom errors
  * @param {any} error - Graph SDK error
  * @param {string} operation - Description of the operation that failed
  * @returns {never} Always throws a Boom error
  */
 function handleGraphError(error, operation) {
-  const errorCode = error.code ?? error.error?.code
-  const statusCode = error.statusCode ?? error.status
+  const { errorCode, statusCode } = getErrorInfo(error)
 
   if (isNotFoundError(errorCode, statusCode)) {
     throw Boom.notFound(
@@ -174,10 +184,14 @@ class AzureAdService {
       logger.info(`[azureGetUserByEmail] Found user: ${user.id} (${email})`)
       return foundUser
     } catch (err) {
-      logger.error(
+      const { errorCode, statusCode } = getErrorInfo(err)
+      const isNotFound = isNotFoundError(errorCode, statusCode)
+
+      logger[isNotFound ? 'info' : 'error'](
         err,
         `[azureGetUserByEmail] Failed to find user by email ${email}: ${getErrorMessage(err)}`
       )
+
       return handleGraphError(err, 'looking up user by email')
     }
   }
