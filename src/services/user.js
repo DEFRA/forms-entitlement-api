@@ -133,7 +133,14 @@ export async function addUser(email, roles, callingUser) {
       displayName: azureUser.displayName
     }
   } catch (err) {
-    logger.error(err, `[addUser] Failed to add user - ${getErrorMessage(err)}`)
+    const isNotFound =
+      Boom.isBoom(err) &&
+      err.output.payload.statusCode === StatusCodes.NOT_FOUND.valueOf()
+
+    logger[isNotFound ? 'info' : 'error'](
+      err,
+      `[addUser] Failed to add user - ${getErrorMessage(err)}`
+    )
 
     throw err
   } finally {
