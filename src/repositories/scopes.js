@@ -16,7 +16,7 @@ export const Scopes = {
 
 export const RoleScopes = {
   [Roles.Admin]: Object.entries(Scopes).map((x) => x[1]),
-  [Roles.FormCreator]: [Scopes.FormRead, Scopes.FormEdit]
+  [Roles.FormCreator]: [Scopes.FormRead, Scopes.FormEdit, Scopes.FormDelete]
 }
 
 /**
