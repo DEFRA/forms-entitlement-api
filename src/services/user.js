@@ -30,7 +30,7 @@ export const logger = createLogger()
  * @returns {UserEntitlementDocument}
  */
 export function mapUser(document) {
-  if (!document.userId || !document.roles || !document.scopes) {
+  if (!document.userId || !document.roles) {
     throw Error(
       'User is malformed in the database. Expected fields are missing.'
     )
@@ -39,7 +39,7 @@ export function mapUser(document) {
   const user = /** @type {UserEntitlementDocument} */ ({
     userId: document.userId,
     roles: document.roles,
-    scopes: document.scopes
+    scopes: mapScopesToRoles(document.roles)
   })
 
   if (document.email) {
@@ -260,8 +260,7 @@ async function findExistingUser(userId) {
 async function createUserInternal(userId, roles, session, email, displayName) {
   const user = /** @type {UserEntitlementDocument} */ ({
     userId,
-    roles,
-    scopes: mapScopesToRoles(roles)
+    roles
   })
 
   if (email) {
@@ -284,8 +283,7 @@ async function createUserInternal(userId, roles, session, email, displayName) {
 async function updateUserInternal(userId, roles, session) {
   const user = {
     userId,
-    roles,
-    scopes: mapScopesToRoles(roles)
+    roles
   }
   return update(userId, user, session)
 }

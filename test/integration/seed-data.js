@@ -11,16 +11,6 @@ const testUsers = [
     email: 'email1@mail.com',
     displayName: 'Test User 1',
     roles: ['admin'],
-    scopes: [
-      'form-read',
-      'form-edit',
-      'form-delete',
-      'form-publish',
-      'user-read',
-      'user-create',
-      'user-edit',
-      'user-delete'
-    ],
     createdAt: new Date(),
     updatedAt: new Date()
   },
@@ -29,7 +19,6 @@ const testUsers = [
     email: 'email2@mail.com',
     displayName: 'Test User 2',
     roles: ['form-creator'],
-    scopes: ['form-read', 'form-edit'],
     createdAt: new Date(),
     updatedAt: new Date()
   }

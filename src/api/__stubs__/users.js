@@ -4,23 +4,14 @@ export const mockFormCreatorUser = {
   userId: 'user-id-creator',
   email: 'creator@defra.gov.uk',
   displayName: 'Form Creator User',
-  roles: ['form-creator'],
-  scopes: ['form-read', 'form-edit']
+  roles: ['form-creator']
 }
 
 export const mockAdminUser = {
   userId: 'user-id-admin',
   email: 'admin@defra.gov.uk',
   displayName: 'Admin User',
-  roles: ['admin'],
-  scopes: [
-    'form-read',
-    'form-edit',
-    'form-delete',
-    'user-create',
-    'user-delete',
-    'user-edit'
-  ]
+  roles: ['admin']
 }
 
 export const mockUserId1 = '111f119119e644a0a8c72118'

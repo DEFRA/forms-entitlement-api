@@ -1,5 +1,5 @@
 /**
- * @typedef {{userId: string, email?: string, displayName?: string, roles: string[], scopes: string[]}} UserEntitlementDocument
+ * @typedef {{userId: string, email?: string, displayName?: string, roles: string[], scopes?: string[]}} UserEntitlementDocument
  * @typedef {{ userId: string }} UserById
  * @typedef {{ email: string, roles: string[] }} UserEntitlementCreateRequest
  * @typedef {{ roles: string[] }} UserEntitlementUpdateRequest
