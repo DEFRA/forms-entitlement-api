@@ -1,7 +1,8 @@
+import { Roles } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 
 import { getCallingUser } from '~/src/helpers/auth-helper.js'
-import { RoleDetails, Roles } from '~/src/repositories/roles.js'
+import { RoleDetails } from '~/src/repositories/role-details.js'
 import {
   createUserSchema,
   updateUserSchema,
@@ -141,7 +142,7 @@ export default [
   {
     method: 'GET',
     path: '/roles',
-    handler: (_request, h) => {
+    handler: () => {
       const roles = Object.entries(Roles).map((role) => {
         const roleDetails = RoleDetails[role[1]]
         return {
@@ -149,7 +150,8 @@ export default [
           code: roleDetails.code
         }
       })
-      return h.response({ roles })
+
+      return { roles }
     }
   }
 ]

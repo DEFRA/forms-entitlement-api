@@ -183,11 +183,19 @@ describe('User route', () => {
         expect(response.statusCode).toBe(200)
 
         const result = JSON.parse(response.payload)
-        expect(result.roles).toHaveLength(2)
+        expect(result.roles).toHaveLength(4)
         expect(result.roles).toEqual([
+          {
+            name: 'Superadmin',
+            code: 'superadmin'
+          },
           {
             name: 'Admin',
             code: 'admin'
+          },
+          {
+            name: 'Form publisher',
+            code: 'form-publisher'
           },
           {
             name: 'Form creator',

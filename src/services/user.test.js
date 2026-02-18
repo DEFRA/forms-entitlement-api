@@ -1,3 +1,4 @@
+import { Roles, Scopes } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 import { ObjectId } from 'mongodb'
 import { pino } from 'pino'
@@ -11,8 +12,6 @@ import { config } from '~/src/config/index.js'
 import { azureUser, callingUser } from '~/src/messaging/__stubs__/users.js'
 import { client, prepareDb } from '~/src/mongo.js'
 import { withLock } from '~/src/repositories/lock-repository.js'
-import { Roles } from '~/src/repositories/roles.js'
-import { Scopes } from '~/src/repositories/scopes.js'
 import {
   create,
   get,

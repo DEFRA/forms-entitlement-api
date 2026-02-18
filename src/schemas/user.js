@@ -1,6 +1,5 @@
+import { Roles } from '@defra/forms-model'
 import Joi from 'joi'
-
-import { Roles } from '~/src/repositories/roles.js'
 
 export const userIdSchema = Joi.object().keys({
   userId: Joi.string().required()
