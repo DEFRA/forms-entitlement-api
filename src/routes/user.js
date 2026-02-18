@@ -27,17 +27,17 @@ export default [
   {
     method: 'GET',
     path: '/users',
-    handler: async (request, h) => {
+    handler: async () => {
       const entities = await getAllUsers()
-      return h.response({ entities })
+      return { entities }
     }
   },
   {
     method: 'GET',
     path: USER_BY_ID_PATH,
-    handler: async (request, h) => {
+    handler: async (request) => {
       const entity = await getUser(request.params.userId)
-      return h.response({ entity })
+      return { entity }
     }
   },
   {
@@ -46,7 +46,7 @@ export default [
     /**
      * @param {CreateUserRequest} request
      */
-    handler: async (request, h) => {
+    handler: async (request) => {
       try {
         const { auth } = request
         const callingUser = getCallingUser(auth.credentials.user)
@@ -59,12 +59,12 @@ export default [
 
         const createdUser = await getUser(result.id)
 
-        return h.response({
+        return {
           id: result.id,
           email: result.email,
           displayName: result.displayName,
           entity: createdUser
-        })
+        }
       } catch (error) {
         if (Boom.isBoom(error)) {
           throw error
@@ -85,7 +85,7 @@ export default [
     /**
      * @param {UpdateUserRequest} request
      */
-    handler: async (request, h) => {
+    handler: async (request) => {
       try {
         const { auth } = request
         const callingUser = getCallingUser(auth.credentials.user)
@@ -95,7 +95,7 @@ export default [
           request.payload.roles,
           callingUser
         )
-        return h.response({ id: result.id })
+        return { id: result.id }
       } catch (error) {
         if (Boom.isBoom(error)) {
           throw error
@@ -117,14 +117,14 @@ export default [
     /**
      * @param {DeleteUserRequest} request
      */
-    handler: async (request, h) => {
+    handler: async (request) => {
       try {
         const { auth } = request
         const callingUser = getCallingUser(auth.credentials.user)
 
         const result = await deleteUser(request.params.userId, callingUser)
 
-        return h.response({ id: result.id })
+        return { id: result.id }
       } catch (error) {
         if (Boom.isBoom(error)) {
           throw error
