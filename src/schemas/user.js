@@ -8,12 +8,12 @@ export const userIdSchema = Joi.object().keys({
 export const createUserSchema = Joi.object().keys({
   email: Joi.string().email().required(),
   roles: Joi.array()
-    .items(Joi.string().valid(Roles.Admin, Roles.FormCreator))
+    .items(Joi.string().valid(...Object.values(Roles)))
     .required()
 })
 
 export const updateUserSchema = Joi.object().keys({
   roles: Joi.array()
-    .items(Joi.string().valid(Roles.Admin, Roles.FormCreator))
+    .items(Joi.string().valid(...Object.values(Roles)))
     .required()
 })
