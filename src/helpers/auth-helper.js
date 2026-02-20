@@ -3,9 +3,10 @@ import Boom from '@hapi/boom'
 /**
  * Get the calling user from the auth credentials
  * @param {UserCredentials & OidcStandardClaims} [user]
- * @returns {AuditUser}
+ * @param {string[]} roles - The roles resolved from the user's entitlement
+ * @returns {CallingUser}
  */
-export function getCallingUser(user) {
+export function getCallingUser(user, roles) {
   if (!user?.oid || !user.name) {
     throw Boom.unauthorized(
       'Failed to get the calling user. User is undefined or has a malformed/missing oid/name.'
@@ -19,12 +20,13 @@ export function getCallingUser(user) {
 
   return {
     id: user.oid,
-    displayName
+    displayName,
+    roles
   }
 }
 
 /**
- * @import { AuditUser } from '@defra/forms-model'
+ * @import { CallingUser } from '~/src/api/types.js'
  * @import { UserCredentials } from '@hapi/hapi'
  * @import { OidcStandardClaims } from 'oidc-client-ts'
  */

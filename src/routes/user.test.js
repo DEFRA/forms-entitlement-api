@@ -13,7 +13,8 @@ jest.mock('~/src/services/scheduler.js', () => ({
 
 const expectedCallingUser = {
   id: auth.credentials.user.oid,
-  displayName: 'Enrique Chase'
+  displayName: 'Enrique Chase',
+  roles: auth.credentials.roles
 }
 
 describe('User route', () => {
@@ -117,8 +118,7 @@ describe('User route', () => {
         expect(allUsers.addUser).toHaveBeenCalledWith(
           'test@example.com',
           ['admin'],
-          expectedCallingUser,
-          auth.credentials.roles
+          expectedCallingUser
         )
         expect(allUsers.getUser).toHaveBeenCalledWith('456')
       })
@@ -146,8 +146,7 @@ describe('User route', () => {
         expect(allUsers.updateUser).toHaveBeenCalledWith(
           '456',
           ['admin'],
-          expectedCallingUser,
-          auth.credentials.roles
+          expectedCallingUser
         )
       })
     })
@@ -170,8 +169,7 @@ describe('User route', () => {
 
         expect(allUsers.deleteUser).toHaveBeenCalledWith(
           '456',
-          expectedCallingUser,
-          auth.credentials.roles
+          expectedCallingUser
         )
       })
     })

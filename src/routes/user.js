@@ -49,13 +49,15 @@ export default [
     handler: async (request) => {
       try {
         const { auth } = request
-        const callingUser = getCallingUser(auth.credentials.user)
+        const callingUser = getCallingUser(
+          auth.credentials.user,
+          auth.credentials.roles
+        )
 
         const result = await addUser(
           request.payload.email,
           request.payload.roles,
-          callingUser,
-          auth.credentials.roles
+          callingUser
         )
 
         const createdUser = await getUser(result.id)
@@ -94,13 +96,15 @@ export default [
     handler: async (request) => {
       try {
         const { auth } = request
-        const callingUser = getCallingUser(auth.credentials.user)
+        const callingUser = getCallingUser(
+          auth.credentials.user,
+          auth.credentials.roles
+        )
 
         const result = await updateUser(
           request.params.userId,
           request.payload.roles,
-          callingUser,
-          auth.credentials.roles
+          callingUser
         )
         return { id: result.id }
       } catch (error) {
@@ -132,13 +136,12 @@ export default [
     handler: async (request) => {
       try {
         const { auth } = request
-        const callingUser = getCallingUser(auth.credentials.user)
-
-        const result = await deleteUser(
-          request.params.userId,
-          callingUser,
+        const callingUser = getCallingUser(
+          auth.credentials.user,
           auth.credentials.roles
         )
+
+        const result = await deleteUser(request.params.userId, callingUser)
 
         return { id: result.id }
       } catch (error) {

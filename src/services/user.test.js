@@ -9,7 +9,11 @@ import {
   mockUserListWithIds
 } from '~/src/api/__stubs__/users.js'
 import { config } from '~/src/config/index.js'
-import { azureUser, callingUser } from '~/src/messaging/__stubs__/users.js'
+import {
+  azureUser,
+  callingUser,
+  superadminCallingUser
+} from '~/src/messaging/__stubs__/users.js'
 import { client, prepareDb } from '~/src/mongo.js'
 import { withLock } from '~/src/repositories/lock-repository.js'
 import {
@@ -256,9 +260,7 @@ describe('User service', () => {
 
       const testEmail = 'test@defra.gov.uk'
       const rolesToAdd = [Roles.Admin]
-      const result = await addUser(testEmail, rolesToAdd, callingUser, [
-        Roles.Superadmin
-      ])
+      const result = await addUser(testEmail, rolesToAdd, superadminCallingUser)
 
       expect(result.id).toBe(
         `user-${testEmail.replace('@', '-').replace('.', '-')}`
@@ -279,9 +281,7 @@ describe('User service', () => {
         )
 
       await expect(
-        addUser('test@defra.gov.uk', [Roles.Admin], callingUser, [
-          Roles.Superadmin
-        ])
+        addUser('test@defra.gov.uk', [Roles.Admin], superadminCallingUser)
       ).rejects.toThrow('Azure AD error')
       expect(mockSession.endSession).toHaveBeenCalled()
     })
@@ -292,9 +292,7 @@ describe('User service', () => {
       )
 
       await expect(
-        addUser('test@defra.gov.uk', [Roles.Admin], callingUser, [
-          Roles.Superadmin
-        ])
+        addUser('test@defra.gov.uk', [Roles.Admin], superadminCallingUser)
       ).rejects.toThrow('Transaction failed')
       expect(mockSession.endSession).toHaveBeenCalled()
     })
@@ -311,16 +309,14 @@ describe('User service', () => {
         )
 
       await expect(
-        addUser('test@defra.gov.uk', [Roles.Admin], callingUser, [
-          Roles.Superadmin
-        ])
+        addUser('test@defra.gov.uk', [Roles.Admin], superadminCallingUser)
       ).rejects.toThrow('User not found')
       expect(mockSession.endSession).toHaveBeenCalled()
     })
 
     it('should throw 403 when admin caller tries to assign admin role', async () => {
       await expect(
-        addUser('test@defra.gov.uk', [Roles.Admin], callingUser, [Roles.Admin])
+        addUser('test@defra.gov.uk', [Roles.Admin], callingUser)
       ).rejects.toThrow(
         expect.objectContaining({
           output: expect.objectContaining({ statusCode: 403 })
@@ -330,9 +326,7 @@ describe('User service', () => {
 
     it('should throw 403 when admin caller tries to assign superadmin role', async () => {
       await expect(
-        addUser('test@defra.gov.uk', [Roles.Superadmin], callingUser, [
-          Roles.Admin
-        ])
+        addUser('test@defra.gov.uk', [Roles.Superadmin], callingUser)
       ).rejects.toThrow(
         expect.objectContaining({
           output: expect.objectContaining({ statusCode: 403 })
@@ -349,8 +343,7 @@ describe('User service', () => {
       const result = await addUser(
         'test@defra.gov.uk',
         [Roles.FormCreator],
-        callingUser,
-        [Roles.Admin]
+        callingUser
       )
 
       expect(result).toBeDefined()
@@ -365,8 +358,7 @@ describe('User service', () => {
       const result = await addUser(
         'test@defra.gov.uk',
         [Roles.FormPublisher],
-        callingUser,
-        [Roles.Admin]
+        callingUser
       )
 
       expect(result).toBeDefined()
@@ -381,8 +373,7 @@ describe('User service', () => {
       const result = await addUser(
         'test@defra.gov.uk',
         [Roles.Admin],
-        callingUser,
-        [Roles.Superadmin]
+        superadminCallingUser
       )
 
       expect(result).toBeDefined()
@@ -408,8 +399,7 @@ describe('User service', () => {
       const result = await updateUser(
         mockUserId1,
         [Roles.FormCreator],
-        callingUser,
-        [Roles.Admin]
+        callingUser
       )
 
       expect(result.id).toBe(mockUserId1)
@@ -425,16 +415,14 @@ describe('User service', () => {
       mockSession.withTransaction.mockRejectedValue(new Error('Update failed'))
 
       await expect(
-        updateUser('123', [Roles.FormCreator], callingUser, [Roles.Admin])
+        updateUser('123', [Roles.FormCreator], callingUser)
       ).rejects.toThrow('Update failed')
       expect(mockSession.endSession).toHaveBeenCalled()
     })
 
     it('should throw 403 when caller tries to update own roles (self-management)', async () => {
       await expect(
-        updateUser(callingUser.id, [Roles.FormCreator], callingUser, [
-          Roles.Admin
-        ])
+        updateUser(callingUser.id, [Roles.FormCreator], callingUser)
       ).rejects.toThrow(
         expect.objectContaining({
           output: expect.objectContaining({ statusCode: 403 })
@@ -450,9 +438,7 @@ describe('User service', () => {
       })
 
       await expect(
-        updateUser('target-user', [Roles.FormCreator], callingUser, [
-          Roles.Admin
-        ])
+        updateUser('target-user', [Roles.FormCreator], callingUser)
       ).rejects.toThrow(
         expect.objectContaining({
           output: expect.objectContaining({ statusCode: 403 })
@@ -468,9 +454,7 @@ describe('User service', () => {
       })
 
       await expect(
-        updateUser('target-user', [Roles.FormCreator], callingUser, [
-          Roles.Admin
-        ])
+        updateUser('target-user', [Roles.FormCreator], callingUser)
       ).rejects.toThrow(
         expect.objectContaining({
           output: expect.objectContaining({ statusCode: 403 })
@@ -486,7 +470,7 @@ describe('User service', () => {
       })
 
       await expect(
-        updateUser('target-user', [Roles.Admin], callingUser, [Roles.Admin])
+        updateUser('target-user', [Roles.Admin], callingUser)
       ).rejects.toThrow(
         expect.objectContaining({
           output: expect.objectContaining({ statusCode: 403 })
@@ -512,8 +496,7 @@ describe('User service', () => {
       const result = await updateUser(
         'target-user',
         [Roles.Superadmin],
-        callingUser,
-        [Roles.Superadmin]
+        superadminCallingUser
       )
 
       expect(result.id).toBe('target-user')
@@ -531,7 +514,7 @@ describe('User service', () => {
         scopes: [Scopes.FormRead]
       })
 
-      const result = await deleteUser(mockUserId1, callingUser, [Roles.Admin])
+      const result = await deleteUser(mockUserId1, callingUser)
 
       expect(result.id).toBe(mockUserId1)
     })
@@ -547,9 +530,9 @@ describe('User service', () => {
 
       mockSession.withTransaction.mockRejectedValue(new Error('Delete failed'))
 
-      await expect(
-        deleteUser('123', callingUser, [Roles.Admin])
-      ).rejects.toThrow('Delete failed')
+      await expect(deleteUser('123', callingUser)).rejects.toThrow(
+        'Delete failed'
+      )
       expect(mockSession.endSession).toHaveBeenCalled()
     })
 
@@ -558,9 +541,7 @@ describe('User service', () => {
       jest.mocked(get).mockRejectedValue(notFoundError)
       jest.mocked(remove).mockResolvedValue()
 
-      const result = await deleteUser('non-existent-user', callingUser, [
-        Roles.Admin
-      ])
+      const result = await deleteUser('non-existent-user', callingUser)
 
       expect(result).toBeDefined()
 
@@ -570,9 +551,7 @@ describe('User service', () => {
     })
 
     it('should throw 403 when caller tries to delete themselves (self-management)', async () => {
-      await expect(
-        deleteUser(callingUser.id, callingUser, [Roles.Admin])
-      ).rejects.toThrow(
+      await expect(deleteUser(callingUser.id, callingUser)).rejects.toThrow(
         expect.objectContaining({
           output: expect.objectContaining({ statusCode: 403 })
         })
@@ -586,9 +565,7 @@ describe('User service', () => {
         scopes: [Scopes.UserCreate]
       })
 
-      await expect(
-        deleteUser('target-admin', callingUser, [Roles.Admin])
-      ).rejects.toThrow(
+      await expect(deleteUser('target-admin', callingUser)).rejects.toThrow(
         expect.objectContaining({
           output: expect.objectContaining({ statusCode: 403 })
         })
@@ -603,7 +580,7 @@ describe('User service', () => {
       })
 
       await expect(
-        deleteUser('target-superadmin', callingUser, [Roles.Admin])
+        deleteUser('target-superadmin', callingUser)
       ).rejects.toThrow(
         expect.objectContaining({
           output: expect.objectContaining({ statusCode: 403 })
@@ -619,9 +596,7 @@ describe('User service', () => {
         scopes: [Scopes.UserCreate]
       })
 
-      const result = await deleteUser('target-admin', callingUser, [
-        Roles.Superadmin
-      ])
+      const result = await deleteUser('target-admin', superadminCallingUser)
 
       expect(result.id).toBe('target-admin')
     })

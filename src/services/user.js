@@ -103,13 +103,12 @@ export async function getUser(userId) {
  * Add a user with Azure AD validation by email
  * @param {string} email - The user's email address
  * @param {string[]} roles
- * @param {AuditUser} callingUser
- * @param {string[]} callingUserRoles - The roles of the calling user for hierarchy validation
+ * @param {CallingUser} callingUser
  */
-export async function addUser(email, roles, callingUser, callingUserRoles) {
+export async function addUser(email, roles, callingUser) {
   logger.info(`Adding user with email '${email}'`)
 
-  validateRoleHierarchy(callingUserRoles, roles)
+  validateRoleHierarchy(callingUser.roles, roles)
 
   const session = client.startSession()
 
@@ -158,18 +157,17 @@ export async function addUser(email, roles, callingUser, callingUserRoles) {
  * Update a user
  * @param {string} userId
  * @param {string[]} roles
- * @param {AuditUser} callingUser
- * @param {string[]} callingUserRoles - The roles of the calling user for hierarchy validation
+ * @param {CallingUser} callingUser
  */
-export async function updateUser(userId, roles, callingUser, callingUserRoles) {
+export async function updateUser(userId, roles, callingUser) {
   logger.info(`Updating user with userID '${userId}'`)
 
-  validateUserManagement(callingUser.id, callingUserRoles, userId, roles)
+  validateUserManagement(callingUser.id, callingUser.roles, userId, roles)
 
   // Also validate hierarchy against the target user's current roles
   const existingUser = await findExistingUser(userId)
   if (existingUser?.roles) {
-    validateRoleHierarchy(callingUserRoles, existingUser.roles)
+    validateRoleHierarchy(callingUser.roles, existingUser.roles)
   }
 
   const session = client.startSession()
@@ -206,10 +204,9 @@ export async function updateUser(userId, roles, callingUser, callingUserRoles) {
 /**
  * Delete a user
  * @param {string} userId
- * @param {AuditUser} callingUser
- * @param {string[]} callingUserRoles - The roles of the calling user for hierarchy validation
+ * @param {CallingUser} callingUser
  */
-export async function deleteUser(userId, callingUser, callingUserRoles) {
+export async function deleteUser(userId, callingUser) {
   logger.info(`Deleting user with userID '${userId}'`)
 
   validateNotSelfAction(callingUser.id, userId)
@@ -218,7 +215,7 @@ export async function deleteUser(userId, callingUser, callingUserRoles) {
   const user = await findExistingUser(userId)
 
   if (user?.roles) {
-    validateRoleHierarchy(callingUserRoles, user.roles)
+    validateRoleHierarchy(callingUser.roles, user.roles)
   }
 
   const azureUser = /** @type {AzureUser} */ ({
@@ -436,7 +433,7 @@ export async function syncAdminUsersFromGroup() {
 }
 
 /**
- * @import { AuditUser } from '@defra/forms-model'
+ * @import { CallingUser } from '~/src/api/types.js'
  * @import { UserEntitlementDocument } from '~/src/api/types.js'
  * @import { AzureUser } from '~/src/services/azure-ad.js'
  * @import { WithId, ClientSession } from 'mongodb'
