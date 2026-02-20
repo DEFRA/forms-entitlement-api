@@ -1,4 +1,4 @@
-import { getErrorMessage } from '@defra/forms-model'
+import { Roles, getErrorMessage, mapScopesToRoles } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 import { StatusCodes } from 'http-status-codes'
 
@@ -11,8 +11,6 @@ import {
 } from '~/src/messaging/publish.js'
 import { client } from '~/src/mongo.js'
 import { withLock } from '~/src/repositories/lock-repository.js'
-import { Roles } from '~/src/repositories/roles.js'
-import { mapScopesToRoles } from '~/src/repositories/scopes.js'
 import {
   create,
   get,
@@ -261,7 +259,7 @@ async function createUserInternal(userId, roles, session, email, displayName) {
   const user = /** @type {UserEntitlementDocument} */ ({
     userId,
     roles,
-    scopes: mapScopesToRoles(roles)
+    scopes: mapScopesToRoles(/** @type {Roles[]} */ (roles))
   })
 
   if (email) {
@@ -285,7 +283,7 @@ async function updateUserInternal(userId, roles, session) {
   const user = {
     userId,
     roles,
-    scopes: mapScopesToRoles(roles)
+    scopes: mapScopesToRoles(/** @type {Roles[]} */ (roles))
   }
   return update(userId, user, session)
 }
