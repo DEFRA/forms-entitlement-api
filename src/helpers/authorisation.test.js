@@ -82,7 +82,8 @@ describe('Authorisation helper', () => {
         }).toThrow(
           expect.objectContaining({
             isBoom: true,
-            output: expect.objectContaining({ statusCode: 403 })
+            output: expect.objectContaining({ statusCode: 403 }),
+            message: `You do not have sufficient privileges to manage ${Roles.Admin} users`
           })
         )
       })
@@ -93,7 +94,8 @@ describe('Authorisation helper', () => {
         }).toThrow(
           expect.objectContaining({
             isBoom: true,
-            output: expect.objectContaining({ statusCode: 403 })
+            output: expect.objectContaining({ statusCode: 403 }),
+            message: `You do not have sufficient privileges to manage ${Roles.Superadmin} users`
           })
         )
       })
@@ -104,7 +106,8 @@ describe('Authorisation helper', () => {
         }).toThrow(
           expect.objectContaining({
             isBoom: true,
-            output: expect.objectContaining({ statusCode: 403 })
+            output: expect.objectContaining({ statusCode: 403 }),
+            message: `You do not have sufficient privileges to manage ${Roles.Admin} users`
           })
         )
       })
@@ -118,7 +121,20 @@ describe('Authorisation helper', () => {
         }).toThrow(
           expect.objectContaining({
             isBoom: true,
-            output: expect.objectContaining({ statusCode: 403 })
+            output: expect.objectContaining({ statusCode: 403 }),
+            message: `You do not have sufficient privileges to manage ${Roles.Superadmin} users`
+          })
+        )
+      })
+
+      it('should throw 403 listing multiple disallowed roles', () => {
+        expect(() => {
+          validateRoleHierarchy(adminRoles, [Roles.Admin, Roles.Superadmin])
+        }).toThrow(
+          expect.objectContaining({
+            isBoom: true,
+            output: expect.objectContaining({ statusCode: 403 }),
+            message: `You do not have sufficient privileges to manage ${Roles.Admin} or ${Roles.Superadmin} users`
           })
         )
       })
@@ -132,7 +148,7 @@ describe('Authorisation helper', () => {
           expect.objectContaining({
             isBoom: true,
             output: expect.objectContaining({ statusCode: 403 }),
-            message: expect.stringContaining('sufficient privileges')
+            message: 'You do not have sufficient privileges to manage users'
           })
         )
       })
@@ -143,7 +159,8 @@ describe('Authorisation helper', () => {
         }).toThrow(
           expect.objectContaining({
             isBoom: true,
-            output: expect.objectContaining({ statusCode: 403 })
+            output: expect.objectContaining({ statusCode: 403 }),
+            message: 'You do not have sufficient privileges to manage users'
           })
         )
       })
@@ -154,7 +171,8 @@ describe('Authorisation helper', () => {
         }).toThrow(
           expect.objectContaining({
             isBoom: true,
-            output: expect.objectContaining({ statusCode: 403 })
+            output: expect.objectContaining({ statusCode: 403 }),
+            message: 'You do not have sufficient privileges to manage users'
           })
         )
       })
@@ -179,7 +197,7 @@ describe('Authorisation helper', () => {
         expect.objectContaining({
           isBoom: true,
           output: expect.objectContaining({ statusCode: 403 }),
-          message: expect.stringContaining('your own account')
+          message: 'You cannot perform this action on your own account'
         })
       )
     })
@@ -193,7 +211,7 @@ describe('Authorisation helper', () => {
         expect.objectContaining({
           isBoom: true,
           output: expect.objectContaining({ statusCode: 403 }),
-          message: expect.stringContaining('sufficient privileges')
+          message: `You do not have sufficient privileges to manage ${Roles.Superadmin} users`
         })
       )
     })

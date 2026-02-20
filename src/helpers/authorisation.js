@@ -43,9 +43,23 @@ export function validateRoleHierarchy(callingUserRoles, targetRoles) {
 
   if (disallowedRoles.length > 0) {
     throw Boom.forbidden(
-      `You do not have sufficient privileges to manage users with role: ${disallowedRoles.join(', ')}`
+      `You do not have sufficient privileges to manage ${formatList(disallowedRoles)} users`
     )
   }
+}
+
+/**
+ * Formats an array of items as a human-readable list.
+ * e.g. ['a'] → 'a', ['a', 'b'] → 'a or b', ['a', 'b', 'c'] → 'a, b or c'
+ * @param {string[]} items
+ * @returns {string}
+ */
+function formatList(items) {
+  if (items.length <= 1) {
+    return items[0] ?? ''
+  }
+
+  return `${items.slice(0, -1).join(', ')} or ${items.at(-1)}`
 }
 
 /**
