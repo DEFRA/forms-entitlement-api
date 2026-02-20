@@ -1,7 +1,9 @@
+import Boom from '@hapi/boom'
 import Jwt from '@hapi/jwt'
 
 import { config } from '~/src/config/index.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
+import { get } from '~/src/repositories/user-repository.js'
 
 const oidcJwksUri = config.get('oidcJwksUri')
 const oidcVerifyAud = config.get('oidcVerifyAud')
@@ -10,11 +12,11 @@ const oidcVerifyIss = config.get('oidcVerifyIss')
 const logger = createLogger()
 
 /**
- * Validates user credentials from JWT token
+ * Validates user credentials from JWT token and resolves user scopes from database
  * @param {Artifacts<UserCredentials>} artifacts - JWT artifacts
- * @returns {{ isValid: boolean, credentials?: any }} Validation result
+ * @returns {Promise<{ isValid: boolean, credentials?: any }>} Validation result
  */
-function validateUserCredentials(artifacts) {
+async function validateUserCredentials(artifacts) {
   const user = artifacts.decoded.payload
 
   if (!user) {
@@ -33,10 +35,36 @@ function validateUserCredentials(artifacts) {
     }
   }
 
-  return {
-    isValid: true,
-    credentials: {
-      user
+  try {
+    const entitlement = await get(oid)
+
+    return {
+      isValid: true,
+      credentials: {
+        user,
+        scope: entitlement.scopes ?? [],
+        roles: entitlement.roles ?? []
+      }
+    }
+  } catch (error) {
+    if (Boom.isBoom(error) && error.output.statusCode === 404) {
+      return {
+        isValid: true,
+        credentials: {
+          user,
+          scope: [],
+          roles: []
+        }
+      }
+    }
+
+    logger.error(
+      error,
+      `[authEntitlementError] Auth: Failed to resolve entitlement for user ${oid}`
+    )
+
+    return {
+      isValid: false
     }
   }
 }

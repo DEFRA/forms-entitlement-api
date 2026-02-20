@@ -256,7 +256,9 @@ describe('User service', () => {
 
       const testEmail = 'test@defra.gov.uk'
       const rolesToAdd = [Roles.Admin]
-      const result = await addUser(testEmail, rolesToAdd, callingUser)
+      const result = await addUser(testEmail, rolesToAdd, callingUser, [
+        Roles.Superadmin
+      ])
 
       expect(result.id).toBe(
         `user-${testEmail.replace('@', '-').replace('.', '-')}`
@@ -277,7 +279,9 @@ describe('User service', () => {
         )
 
       await expect(
-        addUser('test@defra.gov.uk', [Roles.Admin], callingUser)
+        addUser('test@defra.gov.uk', [Roles.Admin], callingUser, [
+          Roles.Superadmin
+        ])
       ).rejects.toThrow('Azure AD error')
       expect(mockSession.endSession).toHaveBeenCalled()
     })
@@ -288,7 +292,9 @@ describe('User service', () => {
       )
 
       await expect(
-        addUser('test@defra.gov.uk', [Roles.Admin], callingUser)
+        addUser('test@defra.gov.uk', [Roles.Admin], callingUser, [
+          Roles.Superadmin
+        ])
       ).rejects.toThrow('Transaction failed')
       expect(mockSession.endSession).toHaveBeenCalled()
     })
@@ -305,9 +311,81 @@ describe('User service', () => {
         )
 
       await expect(
-        addUser('test@defra.gov.uk', [Roles.Admin], callingUser)
+        addUser('test@defra.gov.uk', [Roles.Admin], callingUser, [
+          Roles.Superadmin
+        ])
       ).rejects.toThrow('User not found')
       expect(mockSession.endSession).toHaveBeenCalled()
+    })
+
+    it('should throw 403 when admin caller tries to assign admin role', async () => {
+      await expect(
+        addUser('test@defra.gov.uk', [Roles.Admin], callingUser, [Roles.Admin])
+      ).rejects.toThrow(
+        expect.objectContaining({
+          output: expect.objectContaining({ statusCode: 403 })
+        })
+      )
+    })
+
+    it('should throw 403 when admin caller tries to assign superadmin role', async () => {
+      await expect(
+        addUser('test@defra.gov.uk', [Roles.Superadmin], callingUser, [
+          Roles.Admin
+        ])
+      ).rejects.toThrow(
+        expect.objectContaining({
+          output: expect.objectContaining({ statusCode: 403 })
+        })
+      )
+    })
+
+    it('should succeed when admin caller assigns form-creator role', async () => {
+      jest.mocked(create).mockResolvedValue({
+        acknowledged: true,
+        insertedId: new ObjectId(mockUserId1)
+      })
+
+      const result = await addUser(
+        'test@defra.gov.uk',
+        [Roles.FormCreator],
+        callingUser,
+        [Roles.Admin]
+      )
+
+      expect(result).toBeDefined()
+    })
+
+    it('should succeed when admin caller assigns form-publisher role', async () => {
+      jest.mocked(create).mockResolvedValue({
+        acknowledged: true,
+        insertedId: new ObjectId(mockUserId1)
+      })
+
+      const result = await addUser(
+        'test@defra.gov.uk',
+        [Roles.FormPublisher],
+        callingUser,
+        [Roles.Admin]
+      )
+
+      expect(result).toBeDefined()
+    })
+
+    it('should succeed when superadmin caller assigns any role', async () => {
+      jest.mocked(create).mockResolvedValue({
+        acknowledged: true,
+        insertedId: new ObjectId(mockUserId1)
+      })
+
+      const result = await addUser(
+        'test@defra.gov.uk',
+        [Roles.Admin],
+        callingUser,
+        [Roles.Superadmin]
+      )
+
+      expect(result).toBeDefined()
     })
   })
 
@@ -321,22 +399,124 @@ describe('User service', () => {
         upsertedCount: 1
       })
 
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: mockUserId1,
+        roles: [Roles.FormCreator],
+        scopes: ['form-read']
+      })
+
       const result = await updateUser(
         mockUserId1,
         [Roles.FormCreator],
-        callingUser
+        callingUser,
+        [Roles.Admin]
       )
 
       expect(result.id).toBe(mockUserId1)
     })
 
     it('should handle database errors', async () => {
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: '123',
+        roles: [Roles.FormCreator],
+        scopes: ['form-read']
+      })
+
       mockSession.withTransaction.mockRejectedValue(new Error('Update failed'))
 
       await expect(
-        updateUser('123', [Roles.Admin], callingUser)
+        updateUser('123', [Roles.FormCreator], callingUser, [Roles.Admin])
       ).rejects.toThrow('Update failed')
       expect(mockSession.endSession).toHaveBeenCalled()
+    })
+
+    it('should throw 403 when caller tries to update own roles (self-management)', async () => {
+      await expect(
+        updateUser(callingUser.id, [Roles.FormCreator], callingUser, [
+          Roles.Admin
+        ])
+      ).rejects.toThrow(
+        expect.objectContaining({
+          output: expect.objectContaining({ statusCode: 403 })
+        })
+      )
+    })
+
+    it('should throw 403 when admin caller tries to update an admin user', async () => {
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: 'target-user',
+        roles: [Roles.Admin],
+        scopes: ['user-create']
+      })
+
+      await expect(
+        updateUser('target-user', [Roles.FormCreator], callingUser, [
+          Roles.Admin
+        ])
+      ).rejects.toThrow(
+        expect.objectContaining({
+          output: expect.objectContaining({ statusCode: 403 })
+        })
+      )
+    })
+
+    it('should throw 403 when admin caller tries to update a superadmin user', async () => {
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: 'target-user',
+        roles: [Roles.Superadmin],
+        scopes: ['user-create']
+      })
+
+      await expect(
+        updateUser('target-user', [Roles.FormCreator], callingUser, [
+          Roles.Admin
+        ])
+      ).rejects.toThrow(
+        expect.objectContaining({
+          output: expect.objectContaining({ statusCode: 403 })
+        })
+      )
+    })
+
+    it('should throw 403 when admin caller tries to assign admin/superadmin roles', async () => {
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: 'target-user',
+        roles: [Roles.FormCreator],
+        scopes: ['form-read']
+      })
+
+      await expect(
+        updateUser('target-user', [Roles.Admin], callingUser, [Roles.Admin])
+      ).rejects.toThrow(
+        expect.objectContaining({
+          output: expect.objectContaining({ statusCode: 403 })
+        })
+      )
+    })
+
+    it('should succeed when superadmin updates any user', async () => {
+      jest.mocked(update).mockResolvedValue({
+        acknowledged: true,
+        upsertedId: new ObjectId(mockUserId1),
+        matchedCount: 1,
+        modifiedCount: 1,
+        upsertedCount: 1
+      })
+
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: 'target-user',
+        roles: [Roles.Admin],
+        scopes: ['user-create']
+      })
+
+      const result = await updateUser(
+        'target-user',
+        [Roles.Superadmin],
+        callingUser,
+        [Roles.Superadmin]
+      )
+
+      expect(result.id).toBe('target-user')
     })
   })
 
@@ -347,11 +527,11 @@ describe('User service', () => {
         userId: azureUser.id,
         email: azureUser.email,
         displayName: azureUser.displayName,
-        roles: [Roles.Admin],
+        roles: [Roles.FormCreator],
         scopes: [Scopes.FormRead]
       })
 
-      const result = await deleteUser(mockUserId1, callingUser)
+      const result = await deleteUser(mockUserId1, callingUser, [Roles.Admin])
 
       expect(result.id).toBe(mockUserId1)
     })
@@ -361,15 +541,15 @@ describe('User service', () => {
         userId: '123',
         email: 'test@example.com',
         displayName: 'Test User',
-        roles: [Roles.Admin],
+        roles: [Roles.FormCreator],
         scopes: [Scopes.FormRead]
       })
 
       mockSession.withTransaction.mockRejectedValue(new Error('Delete failed'))
 
-      await expect(deleteUser('123', callingUser)).rejects.toThrow(
-        'Delete failed'
-      )
+      await expect(
+        deleteUser('123', callingUser, [Roles.Admin])
+      ).rejects.toThrow('Delete failed')
       expect(mockSession.endSession).toHaveBeenCalled()
     })
 
@@ -378,13 +558,72 @@ describe('User service', () => {
       jest.mocked(get).mockRejectedValue(notFoundError)
       jest.mocked(remove).mockResolvedValue()
 
-      const result = await deleteUser('non-existent-user', callingUser)
+      const result = await deleteUser('non-existent-user', callingUser, [
+        Roles.Admin
+      ])
 
       expect(result).toBeDefined()
 
       expect(get).toHaveBeenCalledWith('non-existent-user')
       expect(remove).toHaveBeenCalledWith('non-existent-user', mockSession)
       expect(mockSession.endSession).toHaveBeenCalled()
+    })
+
+    it('should throw 403 when caller tries to delete themselves (self-management)', async () => {
+      await expect(
+        deleteUser(callingUser.id, callingUser, [Roles.Admin])
+      ).rejects.toThrow(
+        expect.objectContaining({
+          output: expect.objectContaining({ statusCode: 403 })
+        })
+      )
+    })
+
+    it('should throw 403 when admin tries to delete an admin user', async () => {
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: 'target-admin',
+        roles: [Roles.Admin],
+        scopes: ['user-create']
+      })
+
+      await expect(
+        deleteUser('target-admin', callingUser, [Roles.Admin])
+      ).rejects.toThrow(
+        expect.objectContaining({
+          output: expect.objectContaining({ statusCode: 403 })
+        })
+      )
+    })
+
+    it('should throw 403 when admin tries to delete a superadmin user', async () => {
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: 'target-superadmin',
+        roles: [Roles.Superadmin],
+        scopes: ['user-create']
+      })
+
+      await expect(
+        deleteUser('target-superadmin', callingUser, [Roles.Admin])
+      ).rejects.toThrow(
+        expect.objectContaining({
+          output: expect.objectContaining({ statusCode: 403 })
+        })
+      )
+    })
+
+    it('should succeed when superadmin deletes any user', async () => {
+      jest.mocked(remove).mockResolvedValue()
+      jest.mocked(get).mockResolvedValueOnce({
+        userId: 'target-admin',
+        roles: [Roles.Admin],
+        scopes: ['user-create']
+      })
+
+      const result = await deleteUser('target-admin', callingUser, [
+        Roles.Superadmin
+      ])
+
+      expect(result.id).toBe('target-admin')
     })
   })
 
@@ -409,13 +648,13 @@ describe('User service', () => {
           userId: 'azure-user-1',
           email: 'john.doe@defra.gov.uk',
           displayName: 'John Doe',
-          roles: [Roles.Admin]
+          roles: [Roles.Superadmin]
         }),
         mockSession
       )
     })
 
-    it('should replace form-creator role with admin role only', async () => {
+    it('should replace form-creator role with superadmin role only', async () => {
       const mockMember = {
         id: 'azure-user-1',
         displayName: 'Test User',
@@ -435,14 +674,14 @@ describe('User service', () => {
       expect(update).toHaveBeenCalledWith(
         'azure-user-1',
         expect.objectContaining({
-          roles: [Roles.Admin]
+          roles: [Roles.Superadmin]
         }),
         mockSession
       )
       expect(create).not.toHaveBeenCalled()
     })
 
-    it('should replace all other roles with admin role only', async () => {
+    it('should replace all other roles with superadmin role only', async () => {
       const mockMember = {
         id: 'azure-user-1',
         displayName: 'Test User',
@@ -462,14 +701,14 @@ describe('User service', () => {
       expect(update).toHaveBeenCalledWith(
         'azure-user-1',
         expect.objectContaining({
-          roles: [Roles.Admin]
+          roles: [Roles.Superadmin]
         }),
         mockSession
       )
       expect(create).not.toHaveBeenCalled()
     })
 
-    it('should replace multiple roles including form-creator with admin only', async () => {
+    it('should replace multiple roles including form-creator with superadmin only', async () => {
       const mockMember = {
         id: 'azure-user-1',
         displayName: 'Test User',
@@ -489,14 +728,14 @@ describe('User service', () => {
       expect(update).toHaveBeenCalledWith(
         'azure-user-1',
         expect.objectContaining({
-          roles: [Roles.Admin]
+          roles: [Roles.Superadmin]
         }),
         mockSession
       )
       expect(create).not.toHaveBeenCalled()
     })
 
-    it('should not modify existing admin user', async () => {
+    it('should not modify existing superadmin user', async () => {
       const mockMember = {
         id: 'azure-user-1',
         displayName: 'Test User',
@@ -505,7 +744,7 @@ describe('User service', () => {
 
       const existingUser = {
         userId: 'azure-user-1',
-        roles: [Roles.Admin],
+        roles: [Roles.Superadmin],
         scopes: ['some-scope']
       }
 
@@ -537,7 +776,34 @@ describe('User service', () => {
       expect(update).toHaveBeenCalledWith(
         'azure-user-1',
         expect.objectContaining({
-          roles: [Roles.Admin]
+          roles: [Roles.Superadmin]
+        }),
+        mockSession
+      )
+      expect(create).not.toHaveBeenCalled()
+    })
+
+    it('should update users with Roles.Admin to Roles.Superadmin', async () => {
+      const mockMember = {
+        id: 'azure-user-1',
+        displayName: 'Test User',
+        email: 'test@example.com'
+      }
+
+      const existingUser = {
+        userId: 'azure-user-1',
+        roles: [Roles.Admin],
+        scopes: ['some-scope']
+      }
+
+      const existingUsersMap = new Map([['azure-user-1', existingUser]])
+
+      await processAdminUser(mockMember, mockSession, existingUsersMap)
+
+      expect(update).toHaveBeenCalledWith(
+        'azure-user-1',
+        expect.objectContaining({
+          roles: [Roles.Superadmin]
         }),
         mockSession
       )
@@ -655,7 +921,7 @@ describe('User service', () => {
         'existing-user',
         expect.objectContaining({
           userId: 'existing-user',
-          roles: [Roles.Admin]
+          roles: [Roles.Superadmin]
         }),
         mockSession
       )
@@ -663,7 +929,7 @@ describe('User service', () => {
       expect(create).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: 'new-user',
-          roles: [Roles.Admin]
+          roles: [Roles.Superadmin]
         }),
         mockSession
       )

@@ -54,7 +54,8 @@ export default [
         const result = await addUser(
           request.payload.email,
           request.payload.roles,
-          callingUser
+          callingUser,
+          auth.credentials.roles
         )
 
         const createdUser = await getUser(result.id)
@@ -74,6 +75,11 @@ export default [
       }
     },
     options: {
+      auth: {
+        access: {
+          scope: ['user-create']
+        }
+      },
       validate: {
         payload: createUserSchema
       }
@@ -93,7 +99,8 @@ export default [
         const result = await updateUser(
           request.params.userId,
           request.payload.roles,
-          callingUser
+          callingUser,
+          auth.credentials.roles
         )
         return { id: result.id }
       } catch (error) {
@@ -105,6 +112,11 @@ export default [
       }
     },
     options: {
+      auth: {
+        access: {
+          scope: ['user-edit']
+        }
+      },
       validate: {
         payload: updateUserSchema,
         params: userIdSchema
@@ -122,7 +134,11 @@ export default [
         const { auth } = request
         const callingUser = getCallingUser(auth.credentials.user)
 
-        const result = await deleteUser(request.params.userId, callingUser)
+        const result = await deleteUser(
+          request.params.userId,
+          callingUser,
+          auth.credentials.roles
+        )
 
         return { id: result.id }
       } catch (error) {
@@ -134,6 +150,11 @@ export default [
       }
     },
     options: {
+      auth: {
+        access: {
+          scope: ['user-delete']
+        }
+      },
       validate: {
         params: userIdSchema
       }
