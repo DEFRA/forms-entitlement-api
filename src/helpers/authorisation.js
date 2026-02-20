@@ -4,15 +4,9 @@ import Boom from '@hapi/boom'
 /**
  * Roles that each caller role is permitted to manage.
  * Superadmin can manage all roles; Admin can only manage lower-privilege roles.
- * @type {Record<string, string[]>}
  */
 const manageableRoles = {
-  [Roles.Superadmin]: [
-    Roles.Superadmin,
-    Roles.Admin,
-    Roles.FormPublisher,
-    Roles.FormCreator
-  ],
+  [Roles.Superadmin]: Object.values(Roles),
   [Roles.Admin]: [Roles.FormPublisher, Roles.FormCreator]
 }
 
