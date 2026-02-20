@@ -1,5 +1,6 @@
 import Boom from '@hapi/boom'
 import Jwt from '@hapi/jwt'
+import { StatusCodes } from 'http-status-codes'
 
 import { config } from '~/src/config/index.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
@@ -47,7 +48,10 @@ async function validateUserCredentials(artifacts) {
       }
     }
   } catch (error) {
-    if (Boom.isBoom(error) && error.output.statusCode === 404) {
+    if (
+      Boom.isBoom(error) &&
+      error.output.statusCode === StatusCodes.NOT_FOUND.valueOf()
+    ) {
       return {
         isValid: true,
         credentials: {
