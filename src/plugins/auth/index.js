@@ -58,8 +58,7 @@ async function validateUserCredentials(artifacts) {
       }
     }
 
-    logger.error(
-      error,
+    logger.info(
       `[authEntitlementError] Auth: Failed to resolve entitlement for user ${oid}`
     )
 
