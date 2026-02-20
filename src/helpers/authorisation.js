@@ -3,6 +3,8 @@ import Boom from '@hapi/boom'
 
 /**
  * Roles that each caller role is permitted to manage.
+ * Superadmin can manage all roles; Admin can only manage lower-privilege roles.
+ * @type {Record<string, string[]>}
  */
 const manageableRoles = {
   [Roles.Superadmin]: [
@@ -53,7 +55,7 @@ export function validateRoleHierarchy(callingUserRoles, targetRoles) {
 }
 
 /**
- * Validates a user management action requested by a user.
+ * Combines self-management and role hierarchy validation.
  * Throws `Boom.forbidden` if either check fails.
  * @param {string} callingUserId - The ID of the calling user
  * @param {string[]} callingUserRoles - The roles of the calling user
