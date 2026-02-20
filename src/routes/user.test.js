@@ -1,3 +1,4 @@
+import { Scopes } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 
 import { createServer } from '~/src/api/server.js'
@@ -53,7 +54,7 @@ describe('User route', () => {
         jest.mocked(allUsers.getUser).mockResolvedValue({
           userId: '456',
           roles: ['admin'],
-          scopes: ['user-create', 'user-edit']
+          scopes: [Scopes.UserCreate, Scopes.UserEdit]
         })
 
         const response = await server.inject({
@@ -68,7 +69,7 @@ describe('User route', () => {
           entity: {
             userId: '456',
             roles: ['admin'],
-            scopes: ['user-create', 'user-edit']
+            scopes: [Scopes.UserCreate, Scopes.UserEdit]
           }
         })
 
@@ -87,7 +88,7 @@ describe('User route', () => {
         jest.mocked(allUsers.getUser).mockResolvedValue({
           userId: '456',
           roles: ['admin'],
-          scopes: ['user-create', 'user-edit']
+          scopes: [Scopes.UserCreate, Scopes.UserEdit]
         })
 
         const response = await server.inject({
@@ -109,7 +110,7 @@ describe('User route', () => {
           entity: {
             userId: '456',
             roles: ['admin'],
-            scopes: ['user-create', 'user-edit']
+            scopes: [Scopes.UserCreate, Scopes.UserEdit]
           }
         })
 
@@ -464,7 +465,7 @@ describe('User route', () => {
         jest.mocked(allUsers.getUser).mockResolvedValue({
           userId: '456',
           roles: ['admin'],
-          scopes: ['user-create']
+          scopes: [Scopes.UserCreate]
         })
 
         const response = await server.inject({

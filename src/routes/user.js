@@ -1,4 +1,4 @@
-import { Roles } from '@defra/forms-model'
+import { Roles, Scopes } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 
 import { getCallingUser } from '~/src/helpers/auth-helper.js'
@@ -77,7 +77,7 @@ export default [
     options: {
       auth: {
         access: {
-          scope: ['user-create']
+          scope: [Scopes.UserCreate]
         }
       },
       validate: {
@@ -114,7 +114,7 @@ export default [
     options: {
       auth: {
         access: {
-          scope: ['user-edit']
+          scope: [Scopes.UserEdit]
         }
       },
       validate: {
@@ -152,7 +152,7 @@ export default [
     options: {
       auth: {
         access: {
-          scope: ['user-delete']
+          scope: [Scopes.UserDelete]
         }
       },
       validate: {

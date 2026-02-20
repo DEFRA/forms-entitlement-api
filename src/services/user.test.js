@@ -402,7 +402,7 @@ describe('User service', () => {
       jest.mocked(get).mockResolvedValueOnce({
         userId: mockUserId1,
         roles: [Roles.FormCreator],
-        scopes: ['form-read']
+        scopes: [Scopes.FormRead]
       })
 
       const result = await updateUser(
@@ -419,7 +419,7 @@ describe('User service', () => {
       jest.mocked(get).mockResolvedValueOnce({
         userId: '123',
         roles: [Roles.FormCreator],
-        scopes: ['form-read']
+        scopes: [Scopes.FormRead]
       })
 
       mockSession.withTransaction.mockRejectedValue(new Error('Update failed'))
@@ -446,7 +446,7 @@ describe('User service', () => {
       jest.mocked(get).mockResolvedValueOnce({
         userId: 'target-user',
         roles: [Roles.Admin],
-        scopes: ['user-create']
+        scopes: [Scopes.UserCreate]
       })
 
       await expect(
@@ -464,7 +464,7 @@ describe('User service', () => {
       jest.mocked(get).mockResolvedValueOnce({
         userId: 'target-user',
         roles: [Roles.Superadmin],
-        scopes: ['user-create']
+        scopes: [Scopes.UserCreate]
       })
 
       await expect(
@@ -482,7 +482,7 @@ describe('User service', () => {
       jest.mocked(get).mockResolvedValueOnce({
         userId: 'target-user',
         roles: [Roles.FormCreator],
-        scopes: ['form-read']
+        scopes: [Scopes.FormRead]
       })
 
       await expect(
@@ -506,7 +506,7 @@ describe('User service', () => {
       jest.mocked(get).mockResolvedValueOnce({
         userId: 'target-user',
         roles: [Roles.Admin],
-        scopes: ['user-create']
+        scopes: [Scopes.UserCreate]
       })
 
       const result = await updateUser(
@@ -583,7 +583,7 @@ describe('User service', () => {
       jest.mocked(get).mockResolvedValueOnce({
         userId: 'target-admin',
         roles: [Roles.Admin],
-        scopes: ['user-create']
+        scopes: [Scopes.UserCreate]
       })
 
       await expect(
@@ -599,7 +599,7 @@ describe('User service', () => {
       jest.mocked(get).mockResolvedValueOnce({
         userId: 'target-superadmin',
         roles: [Roles.Superadmin],
-        scopes: ['user-create']
+        scopes: [Scopes.UserCreate]
       })
 
       await expect(
@@ -616,7 +616,7 @@ describe('User service', () => {
       jest.mocked(get).mockResolvedValueOnce({
         userId: 'target-admin',
         roles: [Roles.Admin],
-        scopes: ['user-create']
+        scopes: [Scopes.UserCreate]
       })
 
       const result = await deleteUser('target-admin', callingUser, [
