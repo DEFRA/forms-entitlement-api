@@ -2,7 +2,7 @@ import Boom from '@hapi/boom'
 
 /**
  * Get the calling user from the auth credentials
- * @param {UserCredentials & OidcStandardClaims} [user]
+ * @param {(UserCredentials & OidcStandardClaims) | undefined} user
  * @param {string[]} roles - The roles resolved from the user's entitlement
  * @returns {CallingUser}
  */

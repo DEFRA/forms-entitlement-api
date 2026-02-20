@@ -26,7 +26,7 @@ jest.mock('@hapi/jwt')
 const mockGet = jest.fn()
 
 jest.mock('~/src/repositories/user-repository.js', () => ({
-  get: (...args) => mockGet(...args)
+  get: mockGet
 }))
 
 describe('auth plugin', () => {
@@ -228,8 +228,7 @@ describe('auth plugin', () => {
       const result = await validateFn(artifacts)
 
       expect(result).toEqual({ isValid: false })
-      expect(mockActualTestErrorFn).toHaveBeenCalledWith(
-        expect.any(Error),
+      expect(mockActualTestInfoFn).toHaveBeenCalledWith(
         '[authEntitlementError] Auth: Failed to resolve entitlement for user test-oid-error'
       )
     })
