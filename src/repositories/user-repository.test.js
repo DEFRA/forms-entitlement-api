@@ -217,8 +217,3 @@ describe('user-repository', () => {
     })
   })
 })
-
-/**
- * @import { UserEntitlementDocument } from '~/src/api/types.js'
- * @import { ClientSession } from 'mongodb'
- */

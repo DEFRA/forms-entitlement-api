@@ -425,7 +425,7 @@ describe('User service', () => {
       const existingUser = {
         userId: 'azure-user-1',
         roles: [Roles.FormCreator],
-        scopes: ['some-scope']
+        scopes: [Scopes.FormRead]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -451,8 +451,8 @@ describe('User service', () => {
 
       const existingUser = {
         userId: 'azure-user-1',
-        roles: ['some-other-role', 'another-role'],
-        scopes: ['some-scope']
+        roles: [Roles.FormCreator],
+        scopes: [Scopes.FormRead]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -478,8 +478,8 @@ describe('User service', () => {
 
       const existingUser = {
         userId: 'azure-user-1',
-        roles: [Roles.FormCreator, Roles.Admin, 'other-role'],
-        scopes: ['some-scope']
+        roles: [Roles.FormCreator, Roles.Admin],
+        scopes: [Scopes.FormRead]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -506,7 +506,7 @@ describe('User service', () => {
       const existingUser = {
         userId: 'azure-user-1',
         roles: [Roles.Admin],
-        scopes: ['some-scope']
+        scopes: [Scopes.FormRead]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -527,7 +527,7 @@ describe('User service', () => {
       const existingUser = {
         userId: 'azure-user-1',
         roles: undefined,
-        scopes: ['some-scope']
+        scopes: [Scopes.FormRead]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -801,8 +801,3 @@ describe('User service', () => {
     })
   })
 })
-
-/**
- * @import { UserEntitlementDocument } from '~/src/api/types.js'
- * @import { WithId } from 'mongodb'
- */
