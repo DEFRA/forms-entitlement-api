@@ -24,8 +24,8 @@ export const logger = createLogger()
 
 /**
  * Maps a user document from MongoDB to a user object
- * @param {Partial<UserEntitlementDocument>} document - user document (with ID)
- * @returns {UserEntitlementDocument}
+ * @param {Partial<EntitlementUser>} document - user document (with ID)
+ * @returns {EntitlementUser}
  */
 export function mapUser(document) {
   if (!document.userId || !document.roles || !document.scopes) {
@@ -34,7 +34,7 @@ export function mapUser(document) {
     )
   }
 
-  const user = /** @type {UserEntitlementDocument} */ ({
+  const user = /** @type {EntitlementUser} */ ({
     userId: document.userId,
     roles: document.roles,
     scopes: document.scopes
@@ -52,7 +52,7 @@ export function mapUser(document) {
 }
 
 /**
- * @param {WithId<Partial<UserEntitlementDocument>>[]} documents - user documents (with ID)
+ * @param {WithId<Partial<EntitlementUser>>[]} documents - user documents (with ID)
  */
 export function mapUsers(documents) {
   return documents.map((doc) => mapUser(doc))
@@ -97,7 +97,7 @@ export async function getUser(userId) {
 /**
  * Add a user with Azure AD validation by email
  * @param {string} email - The user's email address
- * @param {string[]} roles
+ * @param {Roles[]} roles
  * @param {AuditUser} callingUser
  */
 export async function addUser(email, roles, callingUser) {
@@ -149,7 +149,7 @@ export async function addUser(email, roles, callingUser) {
 /**
  * Update a user
  * @param {string} userId
- * @param {string[]} roles
+ * @param {Roles[]} roles
  * @param {AuditUser} callingUser
  */
 export async function updateUser(userId, roles, callingUser) {
@@ -231,7 +231,7 @@ export async function deleteUser(userId, callingUser) {
 /**
  * Check if user exists and return user data, or null if not found
  * @param {string} userId - User ID to check
- * @returns {Promise<Partial<UserEntitlementDocument>|null>} User data or null if not found
+ * @returns {Promise<Partial<EntitlementUser>|null>} User data or null if not found
  */
 async function findExistingUser(userId) {
   try {
@@ -250,25 +250,20 @@ async function findExistingUser(userId) {
 /**
  * Create a user with given roles (internal function used within transactions)
  * @param {string} userId - Azure AD user ID
- * @param {string[]} roles - Roles to assign
+ * @param {Roles[]} roles - Roles to assign
  * @param {ClientSession} session - MongoDB session for transaction
- * @param {string} [email] - User's email address
- * @param {string} [displayName] - User's display name
+ * @param {string} email - User's email address
+ * @param {string} displayName - User's display name
  */
 async function createUserInternal(userId, roles, session, email, displayName) {
-  const user = /** @type {UserEntitlementDocument} */ ({
+  const user = /** @type {EntitlementUser} */ ({
     userId,
     roles,
-    scopes: mapScopesToRoles(/** @type {Roles[]} */ (roles))
+    scopes: mapScopesToRoles(roles)
   })
 
-  if (email) {
-    user.email = email
-  }
-
-  if (displayName) {
-    user.displayName = displayName
-  }
+  user.email = email
+  user.displayName = displayName
 
   return create(user, session)
 }
@@ -276,15 +271,16 @@ async function createUserInternal(userId, roles, session, email, displayName) {
 /**
  * Update a user with given roles (internal function used within transactions)
  * @param {string} userId - Azure AD user ID
- * @param {string[]} roles - Roles to assign
+ * @param {Roles[]} roles - Roles to assign
  * @param {ClientSession} session - MongoDB session for transaction
  */
 async function updateUserInternal(userId, roles, session) {
   const user = {
     userId,
     roles,
-    scopes: mapScopesToRoles(/** @type {Roles[]} */ (roles))
+    scopes: mapScopesToRoles(roles)
   }
+
   return update(userId, user, session)
 }
 
@@ -292,7 +288,7 @@ async function updateUserInternal(userId, roles, session) {
  * Process a single admin user - create if doesn't exist, add admin role if missing
  * @param {AzureUser} member - Azure AD group member
  * @param {ClientSession} session - MongoDB session for transaction
- * @param {Map<string, Partial<UserEntitlementDocument>>} existingUsers - Map of existing users by userId
+ * @param {Map<string, Partial<EntitlementUser>>} existingUsers - Map of existing users by userId
  */
 export async function processAdminUser(
   member,
@@ -409,8 +405,7 @@ export async function syncAdminUsersFromGroup() {
 }
 
 /**
- * @import { AuditUser } from '@defra/forms-model'
- * @import { UserEntitlementDocument } from '~/src/api/types.js'
+ * @import { AuditUser, EntitlementUser } from '@defra/forms-model'
  * @import { AzureUser } from '~/src/services/azure-ad.js'
  * @import { WithId, ClientSession } from 'mongodb'
  */
