@@ -40,10 +40,8 @@ export async function get(userId, session = undefined) {
     db.collection(USER_COLLECTION_NAME)
   )
 
-  const sessionOptions = /** @type {FindOptions} */ session && { session }
-
   try {
-    const document = await coll.findOne({ userId }, sessionOptions)
+    const document = await coll.findOne({ userId }, { session })
 
     if (!document) {
       throw Boom.notFound(`User with ID '${userId}' not found`)

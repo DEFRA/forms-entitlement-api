@@ -74,7 +74,7 @@ describe('user-repository', () => {
       const [filter, options] = mockCollection.findOne.mock.calls[0]
 
       expect(filter).toEqual({ userId: mockUserId1 })
-      expect(options).toBeUndefined()
+      expect(options.session).toBeUndefined()
       expect(user).toEqual(mockUserWithId)
     })
 
