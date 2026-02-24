@@ -24,35 +24,23 @@ export const logger = createLogger()
 
 /**
  * Maps a user document from MongoDB to a user object
- * @param {Partial<EntitlementUser>} document - user document (with ID)
+ * @param {WithId<EntitlementUser>} document - user document (with ID)
  * @returns {EntitlementUser}
  */
 export function mapUser(document) {
-  if (!document.userId || !document.roles || !document.scopes) {
-    throw Error(
-      'User is malformed in the database. Expected fields are missing.'
-    )
-  }
-
   const user = /** @type {EntitlementUser} */ ({
     userId: document.userId,
     roles: document.roles,
-    scopes: document.scopes
+    scopes: document.scopes,
+    email: document.email,
+    displayName: document.displayName
   })
-
-  if (document.email) {
-    user.email = document.email
-  }
-
-  if (document.displayName) {
-    user.displayName = document.displayName
-  }
 
   return user
 }
 
 /**
- * @param {WithId<Partial<EntitlementUser>>[]} documents - user documents (with ID)
+ * @param {WithId<EntitlementUser>[]} documents - user documents (with ID)
  */
 export function mapUsers(documents) {
   return documents.map((doc) => mapUser(doc))
