@@ -134,7 +134,7 @@ class AzureAdService {
         .map(
           /** @param {any} user */ (user) => ({
             id: user.id,
-            displayName: user.displayName,
+            displayName: user.displayName ?? user.userPrincipalName,
             email: user.mail ?? user.userPrincipalName
           })
         )

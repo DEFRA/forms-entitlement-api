@@ -15,7 +15,7 @@ const logger = createLogger()
  * Retrieves the list of documents from the database
  */
 export async function getAll() {
-  const coll = /** @type {Collection<Partial<EntitlementUser>>} */ (
+  const coll = /** @type {Collection<EntitlementUser>} */ (
     db.collection(USER_COLLECTION_NAME)
   )
 
@@ -36,7 +36,7 @@ export async function getAll() {
 export async function get(userId, session = undefined) {
   logger.info(`Getting user with ID ${userId}`)
 
-  const coll = /** @satisfies {Collection<Partial<EntitlementUser>>} */ (
+  const coll = /** @satisfies {Collection<EntitlementUser>} */ (
     db.collection(USER_COLLECTION_NAME)
   )
 
