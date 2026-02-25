@@ -3,6 +3,7 @@ import {
   UserCredentials,
   ServerApplicationState
 } from '@hapi/hapi'
+import { Roles } from '@defra/forms-model'
 
 declare module '@hapi/hapi' {
   interface UserCredentials {
@@ -21,7 +22,7 @@ declare module '@hapi/hapi' {
     /**
      * Roles resolved from the user entitlement record
      */
-    roles: string[]
+    roles: Roles[]
   }
 
   interface ServerApplicationState {

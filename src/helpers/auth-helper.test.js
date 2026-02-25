@@ -1,3 +1,5 @@
+import { Roles } from '@defra/forms-model'
+
 import { getCallingUser } from '~/src/helpers/auth-helper.js'
 
 describe('auth-helper', () => {
@@ -16,12 +18,12 @@ describe('auth-helper', () => {
           given_name: 'given',
           family_name: 'family'
         },
-        ['admin']
+        [Roles.Admin]
       )
       expect(user).toEqual({
         id: 'user-guid',
         displayName: 'given family',
-        roles: ['admin']
+        roles: [Roles.Admin]
       })
     })
 

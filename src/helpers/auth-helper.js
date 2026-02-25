@@ -3,7 +3,7 @@ import Boom from '@hapi/boom'
 /**
  * Get the calling user from the auth credentials
  * @param {(UserCredentials & OidcStandardClaims) | undefined} user
- * @param {string[]} roles - The roles resolved from the user's entitlement
+ * @param {Roles[]} roles - The roles resolved from the user's entitlement
  * @returns {CallingUser}
  */
 export function getCallingUser(user, roles) {
@@ -29,4 +29,5 @@ export function getCallingUser(user, roles) {
  * @import { CallingUser } from '~/src/api/types.js'
  * @import { UserCredentials } from '@hapi/hapi'
  * @import { OidcStandardClaims } from 'oidc-client-ts'
+ * @import { Roles } from '@defra/forms-model'
  */
