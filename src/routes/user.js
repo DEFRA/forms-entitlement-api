@@ -106,7 +106,7 @@ export default [
           request.payload.roles,
           callingUser
         )
-        return { id: result.id }
+        return result
       } catch (error) {
         if (Boom.isBoom(error)) {
           throw error

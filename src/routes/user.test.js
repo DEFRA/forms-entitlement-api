@@ -1,4 +1,4 @@
-import { Scopes } from '@defra/forms-model'
+import { Roles, Scopes } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 
 import { createServer } from '~/src/api/server.js'
@@ -54,7 +54,9 @@ describe('User route', () => {
       test('should return the user', async () => {
         jest.mocked(allUsers.getUser).mockResolvedValue({
           userId: '456',
-          roles: ['admin'],
+          email: 'a@b.com',
+          displayName: 'Enrique Chase',
+          roles: [Roles.Admin],
           scopes: [Scopes.UserCreate, Scopes.UserEdit]
         })
 
@@ -69,7 +71,9 @@ describe('User route', () => {
         expect(response.result).toEqual({
           entity: {
             userId: '456',
-            roles: ['admin'],
+            email: 'a@b.com',
+            displayName: 'Enrique Chase',
+            roles: [Roles.Admin],
             scopes: [Scopes.UserCreate, Scopes.UserEdit]
           }
         })
@@ -88,7 +92,9 @@ describe('User route', () => {
 
         jest.mocked(allUsers.getUser).mockResolvedValue({
           userId: '456',
-          roles: ['admin'],
+          email: 'test@example.com',
+          displayName: 'Test User',
+          roles: [Roles.Admin],
           scopes: [Scopes.UserCreate, Scopes.UserEdit]
         })
 
@@ -98,7 +104,7 @@ describe('User route', () => {
           auth,
           payload: {
             email: 'test@example.com',
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -110,14 +116,16 @@ describe('User route', () => {
           displayName: 'Test User',
           entity: {
             userId: '456',
-            roles: ['admin'],
+            email: 'test@example.com',
+            displayName: 'Test User',
+            roles: [Roles.Admin],
             scopes: [Scopes.UserCreate, Scopes.UserEdit]
           }
         })
 
         expect(allUsers.addUser).toHaveBeenCalledWith(
           'test@example.com',
-          ['admin'],
+          [Roles.Admin],
           expectedCallingUser
         )
         expect(allUsers.getUser).toHaveBeenCalledWith('456')
@@ -135,7 +143,7 @@ describe('User route', () => {
           url: '/users/456',
           auth,
           payload: {
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -145,7 +153,7 @@ describe('User route', () => {
 
         expect(allUsers.updateUser).toHaveBeenCalledWith(
           '456',
-          ['admin'],
+          [Roles.Admin],
           expectedCallingUser
         )
       })
@@ -173,39 +181,6 @@ describe('User route', () => {
         )
       })
     })
-
-    describe('GET /roles', () => {
-      test('should return list of roles with their names and codes', async () => {
-        const response = await server.inject({
-          method: 'GET',
-          url: '/roles',
-          auth
-        })
-
-        expect(response.statusCode).toBe(200)
-
-        const result = JSON.parse(response.payload)
-        expect(result.roles).toHaveLength(4)
-        expect(result.roles).toEqual([
-          {
-            name: 'Superadmin',
-            code: 'superadmin'
-          },
-          {
-            name: 'Admin',
-            code: 'admin'
-          },
-          {
-            name: 'Form publisher',
-            code: 'form-publisher'
-          },
-          {
-            name: 'Form creator',
-            code: 'form-creator'
-          }
-        ])
-      })
-    })
   })
 
   describe('Error handling', () => {
@@ -219,7 +194,7 @@ describe('User route', () => {
           auth,
           payload: {
             email: 'test@example.com',
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -236,7 +211,7 @@ describe('User route', () => {
           auth,
           payload: {
             email: 'test@example.com',
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -257,7 +232,7 @@ describe('User route', () => {
           auth,
           payload: {
             email: 'test@example.com',
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -276,7 +251,7 @@ describe('User route', () => {
           url: '/users/456',
           auth,
           payload: {
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -292,7 +267,7 @@ describe('User route', () => {
           url: '/users/456',
           auth,
           payload: {
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 

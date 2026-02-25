@@ -1,25 +1,26 @@
+import { Roles, Scopes } from '@defra/forms-model'
 import { ObjectId } from 'mongodb'
 
 export const mockFormCreatorUser = {
   userId: 'user-id-creator',
   email: 'creator@defra.gov.uk',
   displayName: 'Form Creator User',
-  roles: ['form-creator'],
-  scopes: ['form-read', 'form-edit']
+  roles: [Roles.FormCreator],
+  scopes: [Scopes.FormRead, Scopes.FormEdit]
 }
 
 export const mockAdminUser = {
   userId: 'user-id-admin',
   email: 'admin@defra.gov.uk',
   displayName: 'Admin User',
-  roles: ['admin'],
+  roles: [Roles.Admin],
   scopes: [
-    'form-read',
-    'form-edit',
-    'form-delete',
-    'user-create',
-    'user-delete',
-    'user-edit'
+    Scopes.FormRead,
+    Scopes.FormEdit,
+    Scopes.FormDelete,
+    Scopes.UserCreate,
+    Scopes.UserDelete,
+    Scopes.UserEdit
   ]
 }
 

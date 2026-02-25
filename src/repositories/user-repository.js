@@ -15,7 +15,7 @@ const logger = createLogger()
  * Retrieves the list of documents from the database
  */
 export async function getAll() {
-  const coll = /** @type {Collection<Partial<UserEntitlementDocument>>} */ (
+  const coll = /** @type {Collection<EntitlementUser>} */ (
     db.collection(USER_COLLECTION_NAME)
   )
 
@@ -36,15 +36,12 @@ export async function getAll() {
 export async function get(userId, session = undefined) {
   logger.info(`Getting user with ID ${userId}`)
 
-  const coll =
-    /** @satisfies {Collection<Partial<UserEntitlementDocument>>} */ (
-      db.collection(USER_COLLECTION_NAME)
-    )
-
-  const sessionOptions = /** @type {FindOptions} */ session && { session }
+  const coll = /** @satisfies {Collection<EntitlementUser>} */ (
+    db.collection(USER_COLLECTION_NAME)
+  )
 
   try {
-    const document = await coll.findOne({ userId }, sessionOptions)
+    const document = await coll.findOne({ userId }, { session })
 
     if (!document) {
       throw Boom.notFound(`User with ID '${userId}' not found`)
@@ -69,13 +66,13 @@ export async function get(userId, session = undefined) {
 
 /**
  * Create a document in the database
- * @param {UserEntitlementDocument} document - user entitlement document
+ * @param {EntitlementUser} document - user entitlement document
  * @param {ClientSession} session - mongo transaction session
  */
 export async function create(document, session) {
   logger.info(`Creating user with user ID '${document.userId}'`)
 
-  const coll = /** @satisfies {Collection<UserEntitlementDocument>} */ (
+  const coll = /** @satisfies {Collection<EntitlementUser>} */ (
     db.collection(USER_COLLECTION_NAME)
   )
 
@@ -113,13 +110,13 @@ export async function create(document, session) {
 /**
  * Update a document in the database
  * @param {string} userId - ID of the user
- * @param {UserEntitlementDocument} user - user entitlement document
+ * @param {Partial<EntitlementUser>} user - user entitlement document
  * @param {ClientSession} [session] - mongo transaction session
  */
 export async function update(userId, user, session) {
   logger.info(`Updating user with ID '${userId}'`)
 
-  const coll = /** @satisfies {Collection<UserEntitlementDocument>} */ (
+  const coll = /** @satisfies {Collection<EntitlementUser>} */ (
     db.collection(USER_COLLECTION_NAME)
   )
 
@@ -174,6 +171,6 @@ export async function remove(userId, session) {
 }
 
 /**
- * @import { ClientSession, Collection, UpdateFilter } from 'mongodb'
- * @import { UserEntitlementDocument } from '~/src/api/types.js'
+ * @import { ClientSession, Collection } from 'mongodb'
+ * @import { EntitlementUser } from '@defra/forms-model'
  */
