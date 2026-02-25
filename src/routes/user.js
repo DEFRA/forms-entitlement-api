@@ -1,8 +1,6 @@
-import { Roles } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 
 import { getCallingUser } from '~/src/helpers/auth-helper.js'
-import { RoleDetails } from '~/src/repositories/role-details.js'
 import {
   createUserSchema,
   updateUserSchema,
@@ -95,7 +93,7 @@ export default [
           request.payload.roles,
           callingUser
         )
-        return { id: result.id }
+        return result
       } catch (error) {
         if (Boom.isBoom(error)) {
           throw error
@@ -137,21 +135,6 @@ export default [
       validate: {
         params: userIdSchema
       }
-    }
-  },
-  {
-    method: 'GET',
-    path: '/roles',
-    handler: () => {
-      const roles = Object.entries(Roles).map((role) => {
-        const roleDetails = RoleDetails[role[1]]
-        return {
-          name: roleDetails.name,
-          code: roleDetails.code
-        }
-      })
-
-      return { roles }
     }
   }
 ]

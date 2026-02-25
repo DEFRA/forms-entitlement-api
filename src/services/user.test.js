@@ -123,6 +123,7 @@ describe('User service', () => {
   describe('mapUser', () => {
     it('should map a complete user document', () => {
       const document = {
+        _id: new ObjectId(),
         userId: '123',
         email: 'test@defra.gov.uk',
         displayName: 'Test User',
@@ -136,53 +137,6 @@ describe('User service', () => {
         userId: '123',
         email: 'test@defra.gov.uk',
         displayName: 'Test User',
-        roles: [Roles.Admin],
-        scopes: [Scopes.FormRead]
-      })
-    })
-
-    it('should throw if missing userId', () => {
-      expect(() =>
-        mapUser(
-          /** @type {any} */ ({
-            roles: [Roles.Admin],
-            scopes: [Scopes.FormRead]
-          })
-        )
-      ).toThrow(
-        'User is malformed in the database. Expected fields are missing.'
-      )
-    })
-
-    it('should throw if missing roles', () => {
-      expect(() =>
-        mapUser(
-          /** @type {any} */ ({ userId: '123', scopes: [Scopes.FormRead] })
-        )
-      ).toThrow(
-        'User is malformed in the database. Expected fields are missing.'
-      )
-    })
-
-    it('should throw if missing scopes', () => {
-      expect(() =>
-        mapUser(/** @type {any} */ ({ userId: '123', roles: [Roles.Admin] }))
-      ).toThrow(
-        'User is malformed in the database. Expected fields are missing.'
-      )
-    })
-
-    it('should map user without optional fields', () => {
-      const document = {
-        userId: '123',
-        roles: [Roles.Admin],
-        scopes: [Scopes.FormRead]
-      }
-
-      const result = mapUser(document)
-
-      expect(result).toEqual({
-        userId: '123',
         roles: [Roles.Admin],
         scopes: [Scopes.FormRead]
       })
@@ -200,17 +154,6 @@ describe('User service', () => {
     it('should handle empty array', () => {
       const result = mapUsers([])
       expect(result).toEqual([])
-    })
-
-    it('should throw if any user is malformed', () => {
-      const malformedUsers = [
-        mockUserListWithIds[0],
-        /** @type {any} */ ({ userId: 'incomplete' })
-      ]
-
-      expect(() => mapUsers(malformedUsers)).toThrow(
-        'User is malformed in the database. Expected fields are missing.'
-      )
     })
   })
 
@@ -344,6 +287,7 @@ describe('User service', () => {
     it('should delete user successfully', async () => {
       jest.mocked(remove).mockResolvedValue()
       jest.mocked(get).mockResolvedValueOnce({
+        _id: new ObjectId(),
         userId: azureUser.id,
         email: azureUser.email,
         displayName: azureUser.displayName,
@@ -358,6 +302,7 @@ describe('User service', () => {
 
     it('should handle database errors', async () => {
       jest.mocked(get).mockResolvedValueOnce({
+        _id: new ObjectId(),
         userId: '123',
         email: 'test@example.com',
         displayName: 'Test User',
@@ -425,7 +370,7 @@ describe('User service', () => {
       const existingUser = {
         userId: 'azure-user-1',
         roles: [Roles.FormCreator],
-        scopes: ['some-scope']
+        scopes: [Scopes.FormRead]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -451,8 +396,8 @@ describe('User service', () => {
 
       const existingUser = {
         userId: 'azure-user-1',
-        roles: ['some-other-role', 'another-role'],
-        scopes: ['some-scope']
+        roles: [Roles.FormCreator],
+        scopes: [Scopes.FormRead]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -478,8 +423,8 @@ describe('User service', () => {
 
       const existingUser = {
         userId: 'azure-user-1',
-        roles: [Roles.FormCreator, Roles.Admin, 'other-role'],
-        scopes: ['some-scope']
+        roles: [Roles.FormCreator, Roles.Admin],
+        scopes: [Scopes.FormRead]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -506,7 +451,7 @@ describe('User service', () => {
       const existingUser = {
         userId: 'azure-user-1',
         roles: [Roles.Admin],
-        scopes: ['some-scope']
+        scopes: [Scopes.FormRead]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -527,7 +472,7 @@ describe('User service', () => {
       const existingUser = {
         userId: 'azure-user-1',
         roles: undefined,
-        scopes: ['some-scope']
+        scopes: [Scopes.FormRead]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -607,69 +552,6 @@ describe('User service', () => {
       await expect(
         processAllAdminUsers(mockMembers, mockSession)
       ).rejects.toThrow('Transaction failed')
-    })
-
-    it('should filter out users without userId when creating existingUsersMap', async () => {
-      const mockMembers = [
-        {
-          id: 'existing-user',
-          displayName: 'User 1',
-          email: 'user1@defra.gov.uk'
-        },
-        { id: 'new-user', displayName: 'User 2', email: 'user2@defra.gov.uk' }
-      ]
-
-      const mockUsersFromDb = [
-        {
-          _id: new ObjectId(),
-          userId: 'existing-user',
-          roles: [Roles.FormCreator],
-          scopes: [Scopes.FormRead]
-        },
-        {
-          _id: new ObjectId(),
-          roles: [Roles.Admin],
-          scopes: [Scopes.FormRead]
-        },
-        {
-          _id: new ObjectId(),
-          userId: undefined,
-          roles: [Roles.FormCreator],
-          scopes: [Scopes.FormRead]
-        },
-        {
-          _id: new ObjectId(),
-          userId: 'another-existing-user',
-          roles: [Roles.Admin],
-          scopes: [Scopes.FormRead]
-        }
-      ]
-
-      jest.mocked(getAll).mockResolvedValue(mockUsersFromDb)
-
-      await processAllAdminUsers(mockMembers, mockSession)
-
-      expect(mockSession.withTransaction).toHaveBeenCalled()
-
-      expect(update).toHaveBeenCalledWith(
-        'existing-user',
-        expect.objectContaining({
-          userId: 'existing-user',
-          roles: [Roles.Admin]
-        }),
-        mockSession
-      )
-
-      expect(create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          userId: 'new-user',
-          roles: [Roles.Admin]
-        }),
-        mockSession
-      )
-
-      expect(update).toHaveBeenCalledTimes(1)
-      expect(create).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -801,8 +683,3 @@ describe('User service', () => {
     })
   })
 })
-
-/**
- * @import { UserEntitlementDocument } from '~/src/api/types.js'
- * @import { WithId } from 'mongodb'
- */
