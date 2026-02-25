@@ -1,8 +1,7 @@
-import { Roles, Scopes } from '@defra/forms-model'
+import { Scopes } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 
 import { getCallingUser } from '~/src/helpers/auth-helper.js'
-import { RoleDetails } from '~/src/repositories/role-details.js'
 import {
   createUserSchema,
   updateUserSchema,
@@ -161,21 +160,6 @@ export default [
       validate: {
         params: userIdSchema
       }
-    }
-  },
-  {
-    method: 'GET',
-    path: '/roles',
-    handler: () => {
-      const roles = Object.entries(Roles).map((role) => {
-        const roleDetails = RoleDetails[role[1]]
-        return {
-          name: roleDetails.name,
-          code: roleDetails.code
-        }
-      })
-
-      return { roles }
     }
   }
 ]

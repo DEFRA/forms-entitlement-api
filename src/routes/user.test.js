@@ -451,16 +451,6 @@ describe('User route', () => {
       })
     })
 
-    describe('GET /roles', () => {
-      test('should succeed with no-entitlement auth', async () => {
-        const response = await server.inject({
-          method: 'GET',
-          url: '/roles',
-          auth: noEntitlementAuth
-        })
-
-        expect(response.statusCode).toBe(200)
-      })
     })
   })
 })
