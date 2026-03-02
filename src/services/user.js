@@ -227,7 +227,7 @@ async function findExistingUser(userId) {
   } catch (error) {
     if (
       Boom.isBoom(error) &&
-      error.output.statusCode === Number(StatusCodes.NOT_FOUND)
+      error.output.statusCode === Number(StatusCodes.NOT_FOUND) // eslint-disable-line @typescript-eslint/no-unnecessary-type-conversion -- StatusCodes is a numeric enum
     ) {
       return null
     }

@@ -33,7 +33,7 @@ export async function getAll() {
  * @param {string} userId - ID of the user
  * @param {ClientSession | undefined} [session]
  */
-export async function get(userId, session = undefined) {
+export async function get(userId, session) {
   logger.info(`Getting user with ID ${userId}`)
 
   const coll = /** @satisfies {Collection<EntitlementUser>} */ (
