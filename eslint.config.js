@@ -5,8 +5,8 @@ import globals from 'globals'
 import neostandard from 'neostandard'
 import tseslint from 'typescript-eslint'
 
-// eslint-disable-next-line @typescript-eslint/no-deprecated -- tseslint.config works in v8; defineConfig is v9+ only
-export default tseslint.config(
+/** @type {import('eslint').Linter.Config[]} */
+export default [
   // Global ignores
   {
     ignores: [
@@ -225,4 +225,4 @@ export default tseslint.config(
 
   // Prettier must be last
   prettierConfig
-)
+]
