@@ -47,7 +47,7 @@ describe('auth plugin', () => {
     Jwt = /** @type {Jwt} */ (jwtModule.default)
 
     authModule = await import('~/src/plugins/auth/index.js')
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
     auth = authModule.auth
   })
 
@@ -81,7 +81,6 @@ describe('auth plugin', () => {
         const strategyOptions = /** @type {{ validate: ValidateFn }} */ (
           server.auth.strategy.mock.calls[
             server.auth.strategy.mock.calls.length - 1
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           ][2]
         )
         validateFn = strategyOptions.validate
