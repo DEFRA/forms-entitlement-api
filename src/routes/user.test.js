@@ -3,7 +3,7 @@ import Boom from '@hapi/boom'
 
 import { createServer } from '~/src/api/server.js'
 import * as allUsers from '~/src/services/user.js'
-import { auth } from '~/test/fixtures/auth.js'
+import { auth, noEntitlementAuth } from '~/test/fixtures/auth.js'
 
 jest.mock('~/src/services/user.js')
 jest.mock('~/src/mongo.js')
@@ -13,7 +13,8 @@ jest.mock('~/src/services/scheduler.js', () => ({
 
 const expectedCallingUser = {
   id: auth.credentials.user.oid,
-  displayName: 'Enrique Chase'
+  displayName: 'Enrique Chase',
+  roles: auth.credentials.roles
 }
 
 describe('User route', () => {
@@ -315,6 +316,140 @@ describe('User route', () => {
         })
 
         expect(response.statusCode).toBe(400)
+      })
+    })
+  })
+
+  describe('Scope enforcement', () => {
+    describe('POST /users', () => {
+      test('should return 403 when caller lacks user-create scope', async () => {
+        const response = await server.inject({
+          method: 'POST',
+          url: '/users',
+          auth: noEntitlementAuth,
+          payload: {
+            email: 'test@example.com',
+            roles: ['form-creator']
+          }
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+
+      test('should return 403 when admin tries to create admin/superadmin user', async () => {
+        jest
+          .mocked(allUsers.addUser)
+          .mockRejectedValue(
+            Boom.forbidden('You do not have sufficient privileges')
+          )
+
+        const response = await server.inject({
+          method: 'POST',
+          url: '/users',
+          auth,
+          payload: {
+            email: 'test@example.com',
+            roles: ['admin']
+          }
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+    })
+
+    describe('PUT /users/{userId}', () => {
+      test('should return 403 when caller lacks user-edit scope', async () => {
+        const response = await server.inject({
+          method: 'PUT',
+          url: '/users/456',
+          auth: noEntitlementAuth,
+          payload: {
+            roles: ['form-creator']
+          }
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+
+      test('should return 403 for self-management attempt', async () => {
+        jest
+          .mocked(allUsers.updateUser)
+          .mockRejectedValue(
+            Boom.forbidden('You cannot perform this action on your own account')
+          )
+
+        const response = await server.inject({
+          method: 'PUT',
+          url: `/users/${auth.credentials.user.oid}`,
+          auth,
+          payload: {
+            roles: ['form-creator']
+          }
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+    })
+
+    describe('DELETE /users/{userId}', () => {
+      test('should return 403 when caller lacks user-delete scope', async () => {
+        const response = await server.inject({
+          method: 'DELETE',
+          url: '/users/456',
+          auth: noEntitlementAuth
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+
+      test('should return 403 for self-management attempt', async () => {
+        jest
+          .mocked(allUsers.deleteUser)
+          .mockRejectedValue(
+            Boom.forbidden('You cannot perform this action on your own account')
+          )
+
+        const response = await server.inject({
+          method: 'DELETE',
+          url: `/users/${auth.credentials.user.oid}`,
+          auth
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+    })
+
+    describe('GET /users', () => {
+      test('should succeed with no-entitlement auth (no scope required)', async () => {
+        jest.mocked(allUsers.getAllUsers).mockResolvedValue([])
+
+        const response = await server.inject({
+          method: 'GET',
+          url: '/users',
+          auth: noEntitlementAuth
+        })
+
+        expect(response.statusCode).toBe(200)
+      })
+    })
+
+    describe('GET /users/{userId}', () => {
+      test('should succeed with no-entitlement auth', async () => {
+        jest.mocked(allUsers.getUser).mockResolvedValue({
+          userId: '456',
+          displayName: 'Enrique Chase',
+          email: 'enrique.chase@example.com',
+          roles: [Roles.Admin],
+          scopes: [Scopes.UserCreate]
+        })
+
+        const response = await server.inject({
+          method: 'GET',
+          url: '/users/456',
+          auth: noEntitlementAuth
+        })
+
+        expect(response.statusCode).toBe(200)
       })
     })
   })

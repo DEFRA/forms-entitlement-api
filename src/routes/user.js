@@ -1,3 +1,4 @@
+import { Scopes } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 
 import { getCallingUser } from '~/src/helpers/auth-helper.js'
@@ -47,7 +48,10 @@ export default [
     handler: async (request) => {
       try {
         const { auth } = request
-        const callingUser = getCallingUser(auth.credentials.user)
+        const callingUser = getCallingUser(
+          auth.credentials.user,
+          auth.credentials.roles
+        )
 
         const result = await addUser(
           request.payload.email,
@@ -72,6 +76,11 @@ export default [
       }
     },
     options: {
+      auth: {
+        access: {
+          scope: [Scopes.UserCreate]
+        }
+      },
       validate: {
         payload: createUserSchema
       }
@@ -86,7 +95,10 @@ export default [
     handler: async (request) => {
       try {
         const { auth } = request
-        const callingUser = getCallingUser(auth.credentials.user)
+        const callingUser = getCallingUser(
+          auth.credentials.user,
+          auth.credentials.roles
+        )
 
         const result = await updateUser(
           request.params.userId,
@@ -103,6 +115,11 @@ export default [
       }
     },
     options: {
+      auth: {
+        access: {
+          scope: [Scopes.UserEdit]
+        }
+      },
       validate: {
         payload: updateUserSchema,
         params: userIdSchema
@@ -118,7 +135,10 @@ export default [
     handler: async (request) => {
       try {
         const { auth } = request
-        const callingUser = getCallingUser(auth.credentials.user)
+        const callingUser = getCallingUser(
+          auth.credentials.user,
+          auth.credentials.roles
+        )
 
         const result = await deleteUser(request.params.userId, callingUser)
 
@@ -132,6 +152,11 @@ export default [
       }
     },
     options: {
+      auth: {
+        access: {
+          scope: [Scopes.UserDelete]
+        }
+      },
       validate: {
         params: userIdSchema
       }

@@ -44,7 +44,7 @@ describe('publish', () => {
         category: AuditEventMessageCategory.ENTITLEMENT,
         type: AuditEventMessageType.ENTITLEMENT_CREATED,
         createdAt: expect.any(Date),
-        createdBy: callingUser,
+        createdBy: { id: callingUser.id, displayName: callingUser.displayName },
         data: {
           userId: azureUser.id,
           email: azureUser.email,
@@ -83,7 +83,7 @@ describe('publish', () => {
         category: AuditEventMessageCategory.ENTITLEMENT,
         type: AuditEventMessageType.ENTITLEMENT_UPDATED,
         createdAt: expect.any(Date),
-        createdBy: callingUser,
+        createdBy: { id: callingUser.id, displayName: callingUser.displayName },
         data: {
           userId: azureUser.id,
           email: azureUser.email,
@@ -122,7 +122,7 @@ describe('publish', () => {
         category: AuditEventMessageCategory.ENTITLEMENT,
         type: AuditEventMessageType.ENTITLEMENT_DELETED,
         createdAt: expect.any(Date),
-        createdBy: callingUser,
+        createdBy: { id: callingUser.id, displayName: callingUser.displayName },
         data: {
           userId: azureUser.id,
           email: azureUser.email,
