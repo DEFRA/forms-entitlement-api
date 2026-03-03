@@ -27,9 +27,10 @@ export const logger = createLogger()
 /**
  * Maps a user document from MongoDB to a user object
  * @param {Partial<UserEntitlementDocument>} document - user document (with ID)
+ * @param {boolean} [includeScopes] - whether to compute and include the scopes array
  * @returns {UserEntitlementDocument}
  */
-export function mapUser(document) {
+export function mapUser(document, includeScopes = false) {
   if (!document.userId || !document.roles) {
     throw Error(
       'User is malformed in the database. Expected fields are missing.'
@@ -38,9 +39,12 @@ export function mapUser(document) {
 
   const user = /** @type {UserEntitlementDocument} */ ({
     userId: document.userId,
-    roles: document.roles,
-    scopes: mapScopesToRoles(document.roles)
+    roles: document.roles
   })
+
+  if (includeScopes) {
+    user.scopes = mapScopesToRoles(document.roles)
+  }
 
   if (document.email) {
     user.email = document.email
@@ -86,7 +90,7 @@ export async function getUser(userId) {
   logger.info(`Getting user with userID '${userId}'`)
 
   try {
-    return mapUser(await get(userId))
+    return mapUser(await get(userId), true)
   } catch (err) {
     logger.info(
       `[getUser] Failed to get user with userID '${userId}' - ${getErrorMessage(err)}`

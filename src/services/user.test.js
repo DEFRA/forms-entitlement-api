@@ -118,7 +118,7 @@ describe('User service', () => {
   })
 
   describe('mapUser', () => {
-    it('should map a complete user document', () => {
+    it('should not include scopes by default', () => {
       const document = {
         userId: '123',
         email: 'test@defra.gov.uk',
@@ -132,6 +132,72 @@ describe('User service', () => {
         userId: '123',
         email: 'test@defra.gov.uk',
         displayName: 'Test User',
+        roles: [Roles.Admin]
+      })
+      expect(result).not.toHaveProperty('scopes')
+    })
+
+    it('should not include a legacy scopes field from the document by default', () => {
+      const result = mapUser({
+        userId: '123',
+        roles: [Roles.Admin],
+        scopes: ['stale-scope']
+      })
+      expect(result).not.toHaveProperty('scopes')
+    })
+
+    it('should include computed scopes when includeScopes is true', () => {
+      const document = {
+        userId: '123',
+        email: 'test@defra.gov.uk',
+        displayName: 'Test User',
+        roles: [Roles.Admin]
+      }
+
+      const result = mapUser(document, true)
+
+      expect(result).toEqual({
+        userId: '123',
+        email: 'test@defra.gov.uk',
+        displayName: 'Test User',
+        roles: [Roles.Admin],
+        scopes: [
+          Scopes.FormDelete,
+          Scopes.FormEdit,
+          Scopes.FormRead,
+          Scopes.FormPublish,
+          Scopes.UserCreate,
+          Scopes.UserDelete,
+          Scopes.UserEdit
+        ]
+      })
+    })
+
+    it('should ignore legacy scopes field and compute scopes from roles when includeScopes is true', () => {
+      const document = {
+        userId: '123',
+        roles: [Roles.Admin],
+        scopes: ['stale-scope']
+      }
+
+      const result = mapUser(document, true)
+
+      expect(result.scopes).toEqual([
+        Scopes.FormDelete,
+        Scopes.FormEdit,
+        Scopes.FormRead,
+        Scopes.FormPublish,
+        Scopes.UserCreate,
+        Scopes.UserDelete,
+        Scopes.UserEdit
+      ])
+    })
+
+    it('should map user without optional fields', () => {
+      const result = mapUser({ userId: '123', roles: [Roles.Admin] }, true)
+
+      expect(result).toEqual({
+        userId: '123',
         roles: [Roles.Admin],
         scopes: [
           Scopes.FormDelete,
@@ -147,11 +213,7 @@ describe('User service', () => {
 
     it('should throw if missing userId', () => {
       expect(() =>
-        mapUser(
-          /** @type {any} */ ({
-            roles: [Roles.Admin]
-          })
-        )
+        mapUser(/** @type {any} */ ({ roles: [Roles.Admin] }))
       ).toThrow(
         'User is malformed in the database. Expected fields are missing.'
       )
@@ -161,49 +223,6 @@ describe('User service', () => {
       expect(() => mapUser(/** @type {any} */ ({ userId: '123' }))).toThrow(
         'User is malformed in the database. Expected fields are missing.'
       )
-    })
-
-    it('should ignore legacy scopes field and compute scopes from roles', () => {
-      const document = {
-        userId: '123',
-        roles: [Roles.Admin],
-        scopes: ['stale-scope']
-      }
-
-      const result = mapUser(document)
-
-      expect(result.scopes).toEqual([
-        Scopes.FormDelete,
-        Scopes.FormEdit,
-        Scopes.FormRead,
-        Scopes.FormPublish,
-        Scopes.UserCreate,
-        Scopes.UserDelete,
-        Scopes.UserEdit
-      ])
-    })
-
-    it('should map user without optional fields', () => {
-      const document = {
-        userId: '123',
-        roles: [Roles.Admin]
-      }
-
-      const result = mapUser(document)
-
-      expect(result).toEqual({
-        userId: '123',
-        roles: [Roles.Admin],
-        scopes: [
-          Scopes.FormDelete,
-          Scopes.FormEdit,
-          Scopes.FormRead,
-          Scopes.FormPublish,
-          Scopes.UserCreate,
-          Scopes.UserDelete,
-          Scopes.UserEdit
-        ]
-      })
     })
   })
 
@@ -215,32 +234,24 @@ describe('User service', () => {
       expect(result[0]).toEqual(
         expect.objectContaining({
           userId: 'user-id-admin',
-          roles: ['admin'],
-          scopes: [
-            Scopes.FormDelete,
-            Scopes.FormEdit,
-            Scopes.FormRead,
-            Scopes.FormPublish,
-            Scopes.UserCreate,
-            Scopes.UserDelete,
-            Scopes.UserEdit
-          ]
+          roles: ['admin']
         })
       )
+      expect(result[0]).not.toHaveProperty('scopes')
       expect(result[1]).toEqual(
         expect.objectContaining({
           userId: 'user-id-creator2',
-          roles: ['form-creator'],
-          scopes: [Scopes.FormRead, Scopes.FormEdit, Scopes.FormDelete]
+          roles: ['form-creator']
         })
       )
+      expect(result[1]).not.toHaveProperty('scopes')
       expect(result[2]).toEqual(
         expect.objectContaining({
           userId: 'user-id-creator',
-          roles: ['form-creator'],
-          scopes: [Scopes.FormRead, Scopes.FormEdit, Scopes.FormDelete]
+          roles: ['form-creator']
         })
       )
+      expect(result[2]).not.toHaveProperty('scopes')
     })
 
     it('should handle empty array', () => {
@@ -270,14 +281,10 @@ describe('User service', () => {
       expect(result[0]).toEqual(
         expect.objectContaining({
           userId: 'user-id-admin',
-          roles: ['admin'],
-          scopes: expect.arrayContaining([
-            Scopes.FormDelete,
-            Scopes.FormEdit,
-            Scopes.FormRead
-          ])
+          roles: ['admin']
         })
       )
+      expect(result[0]).not.toHaveProperty('scopes')
     })
 
     it('should throw if repository error', async () => {
