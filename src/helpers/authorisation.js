@@ -63,21 +63,29 @@ function formatList(items) {
 }
 
 /**
- * Combines self-management and role hierarchy validation.
- * Throws `Boom.forbidden` if either check fails.
+ * Validates self-management prevention, hierarchy against requested roles,
+ * and optionally hierarchy against the target user's current roles.
+ * Throws `Boom.forbidden` if any check fails.
  * @param {string} callingUserId - The ID of the calling user
  * @param {string[]} callingUserRoles - The roles of the calling user
  * @param {string} targetUserId - The ID of the target user
- * @param {string[]} targetRoles - The roles of the target user (current or requested)
+ * @param {string[]} requestedRoles - The roles being requested (pass empty array for delete operations)
+ * @param {string[]} [currentRoles] - The target user's current roles from the database
  */
 export function validateUserManagement(
   callingUserId,
   callingUserRoles,
   targetUserId,
-  targetRoles
+  requestedRoles,
+  currentRoles = []
 ) {
   validateNotSelfAction(callingUserId, targetUserId)
-  validateRoleHierarchy(callingUserRoles, targetRoles)
+  if (requestedRoles.length > 0) {
+    validateRoleHierarchy(callingUserRoles, requestedRoles)
+  }
+  if (currentRoles.length > 0) {
+    validateRoleHierarchy(callingUserRoles, currentRoles)
+  }
 }
 
 /**

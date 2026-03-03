@@ -215,5 +215,41 @@ describe('Authorisation helper', () => {
         })
       )
     })
+
+    it("should throw when caller cannot manage the target user's current roles", () => {
+      expect(() => {
+        validateUserManagement(
+          'user-1',
+          [Roles.Admin],
+          'user-2',
+          [Roles.FormCreator],
+          [Roles.Admin]
+        )
+      }).toThrow(
+        expect.objectContaining({
+          isBoom: true,
+          output: expect.objectContaining({ statusCode: 403 }),
+          message: `You do not have sufficient privileges to manage ${Roles.Admin} users`
+        })
+      )
+    })
+
+    it('should succeed when caller can manage both requested and current roles', () => {
+      expect(() => {
+        validateUserManagement(
+          'user-1',
+          [Roles.Superadmin],
+          'user-2',
+          [Roles.FormCreator],
+          [Roles.Admin]
+        )
+      }).not.toThrow()
+    })
+
+    it('should skip hierarchy checks when both role arrays are empty', () => {
+      expect(() => {
+        validateUserManagement('user-1', [Roles.Admin], 'user-2', [], [])
+      }).not.toThrow()
+    })
   })
 })

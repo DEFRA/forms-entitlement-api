@@ -3,11 +3,7 @@ import Boom from '@hapi/boom'
 import { StatusCodes } from 'http-status-codes'
 
 import { config } from '~/src/config/index.js'
-import {
-  validateNotSelfAction,
-  validateRoleHierarchy,
-  validateUserManagement
-} from '~/src/helpers/authorisation.js'
+import { validateUserManagement } from '~/src/helpers/authorisation.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 import {
   publishEntitlementCreatedEvent,
@@ -96,14 +92,19 @@ export async function getUser(userId) {
 export async function addUser(email, roles, callingUser) {
   logger.info(`Adding user with email '${email}'`)
 
-  validateRoleHierarchy(callingUser.roles, roles)
-
   const session = client.startSession()
 
   try {
     const azureAdService = getAzureAdService()
     const azureUser = await azureAdService.getUserByEmail(email)
     logger.info(`User found in Azure AD with ID: ${azureUser.id}`)
+
+    validateUserManagement(
+      callingUser.id,
+      callingUser.roles,
+      azureUser.id,
+      roles
+    )
 
     await session.withTransaction(async () => {
       const newUserEntity = await createUserInternal(
@@ -150,13 +151,15 @@ export async function addUser(email, roles, callingUser) {
 export async function updateUser(userId, roles, callingUser) {
   logger.info(`Updating user with userID '${userId}'`)
 
-  validateUserManagement(callingUser.id, callingUser.roles, userId, roles)
-
-  // Also validate hierarchy against the target user's current roles
   const existingUser = await findExistingUser(userId)
-  if (existingUser?.roles) {
-    validateRoleHierarchy(callingUser.roles, existingUser.roles)
-  }
+
+  validateUserManagement(
+    callingUser.id,
+    callingUser.roles,
+    userId,
+    roles,
+    existingUser?.roles ?? []
+  )
 
   const session = client.startSession()
 
@@ -197,19 +200,20 @@ export async function updateUser(userId, roles, callingUser) {
 export async function deleteUser(userId, callingUser) {
   logger.info(`Deleting user with userID '${userId}'`)
 
-  validateNotSelfAction(callingUser.id, userId)
+  const existingUser = await findExistingUser(userId)
 
-  // Validate hierarchy against the target user's current roles before starting a session
-  const user = await findExistingUser(userId)
-
-  if (user?.roles) {
-    validateRoleHierarchy(callingUser.roles, user.roles)
-  }
+  validateUserManagement(
+    callingUser.id,
+    callingUser.roles,
+    userId,
+    [],
+    existingUser?.roles ?? []
+  )
 
   const azureUser = /** @type {AzureUser} */ ({
-    id: user?.userId ?? userId,
-    displayName: user?.displayName ?? '',
-    email: user?.email ?? ''
+    id: existingUser?.userId ?? userId,
+    displayName: existingUser?.displayName ?? '',
+    email: existingUser?.email ?? ''
   })
 
   const session = client.startSession()
