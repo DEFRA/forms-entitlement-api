@@ -43,8 +43,8 @@ async function validateUserCredentials(artifacts) {
       isValid: true,
       credentials: {
         user,
-        scope: entitlement.scopes ?? [],
-        roles: entitlement.roles ?? []
+        scope: entitlement.scopes,
+        roles: entitlement.roles
       }
     }
   } catch (error) {

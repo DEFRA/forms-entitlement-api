@@ -437,7 +437,9 @@ describe('User route', () => {
       test('should succeed with no-entitlement auth', async () => {
         jest.mocked(allUsers.getUser).mockResolvedValue({
           userId: '456',
-          roles: ['admin'],
+          displayName: 'Enrique Chase',
+          email: 'enrique.chase@example.com',
+          roles: [Roles.Admin],
           scopes: [Scopes.UserCreate]
         })
 
@@ -449,8 +451,6 @@ describe('User route', () => {
 
         expect(response.statusCode).toBe(200)
       })
-    })
-
     })
   })
 })

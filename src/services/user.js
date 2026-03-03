@@ -418,7 +418,7 @@ export async function syncAdminUsersFromGroup() {
 
 /**
  * @import { CallingUser } from '~/src/api/types.js'
- * @import { EntitlementUser, Roles } from '@defra/forms-model'
+ * @import { EntitlementUser } from '@defra/forms-model'
  * @import { AzureUser } from '~/src/services/azure-ad.js'
  * @import { WithId, ClientSession } from 'mongodb'
  */

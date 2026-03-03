@@ -334,9 +334,12 @@ describe('User service', () => {
       })
 
       jest.mocked(get).mockResolvedValueOnce({
+        _id: new ObjectId(),
         userId: mockUserId1,
         roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead]
+        scopes: [Scopes.FormRead],
+        email: 'test@defra.gov.uk',
+        displayName: 'Test User'
       })
 
       const result = await updateUser(
@@ -350,9 +353,12 @@ describe('User service', () => {
 
     it('should handle database errors', async () => {
       jest.mocked(get).mockResolvedValueOnce({
+        _id: new ObjectId(),
         userId: '123',
         roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead]
+        scopes: [Scopes.FormRead],
+        email: 'test@example.com',
+        displayName: 'Test User'
       })
 
       mockSession.withTransaction.mockRejectedValue(new Error('Update failed'))
@@ -375,9 +381,12 @@ describe('User service', () => {
 
     it('should throw 403 when admin caller tries to update an admin user', async () => {
       jest.mocked(get).mockResolvedValueOnce({
+        _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate]
+        scopes: [Scopes.UserCreate],
+        email: 'target-admin@example.com',
+        displayName: 'Target User'
       })
 
       await expect(
@@ -391,9 +400,12 @@ describe('User service', () => {
 
     it('should throw 403 when admin caller tries to update a superadmin user', async () => {
       jest.mocked(get).mockResolvedValueOnce({
+        _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.Superadmin],
-        scopes: [Scopes.UserCreate]
+        scopes: [Scopes.UserCreate],
+        email: 'target@example.com',
+        displayName: 'Target User'
       })
 
       await expect(
@@ -407,9 +419,12 @@ describe('User service', () => {
 
     it('should throw 403 when admin caller tries to assign admin/superadmin roles', async () => {
       jest.mocked(get).mockResolvedValueOnce({
+        _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead]
+        scopes: [Scopes.FormRead],
+        email: 'target@example.com',
+        displayName: 'Target User'
       })
 
       await expect(
@@ -431,9 +446,12 @@ describe('User service', () => {
       })
 
       jest.mocked(get).mockResolvedValueOnce({
+        _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate]
+        scopes: [Scopes.UserCreate],
+        email: 'target-admin@example.com',
+        displayName: 'Target User'
       })
 
       const result = await updateUser(
@@ -505,9 +523,12 @@ describe('User service', () => {
 
     it('should throw 403 when admin tries to delete an admin user', async () => {
       jest.mocked(get).mockResolvedValueOnce({
+        _id: new ObjectId(),
         userId: 'target-admin',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate]
+        scopes: [Scopes.UserCreate],
+        email: 'admin@example.com',
+        displayName: 'Target Admin'
       })
 
       await expect(deleteUser('target-admin', callingUser)).rejects.toThrow(
@@ -519,9 +540,12 @@ describe('User service', () => {
 
     it('should throw 403 when admin tries to delete a superadmin user', async () => {
       jest.mocked(get).mockResolvedValueOnce({
+        _id: new ObjectId(),
         userId: 'target-superadmin',
         roles: [Roles.Superadmin],
-        scopes: [Scopes.UserCreate]
+        scopes: [Scopes.UserCreate],
+        email: 'superadmin@example.com',
+        displayName: 'Target Superadmin'
       })
 
       await expect(
@@ -536,9 +560,12 @@ describe('User service', () => {
     it('should succeed when superadmin deletes any user', async () => {
       jest.mocked(remove).mockResolvedValue()
       jest.mocked(get).mockResolvedValueOnce({
+        _id: new ObjectId(),
         userId: 'target-admin',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate]
+        scopes: [Scopes.UserCreate],
+        email: 'admin@example.com',
+        displayName: 'Target Admin'
       })
 
       const result = await deleteUser('target-admin', superadminCallingUser)
@@ -805,29 +832,38 @@ describe('User service', () => {
         { id: 'new-user', displayName: 'User 2', email: 'user2@defra.gov.uk' }
       ]
 
+      /** @type {any[]} */
       const mockUsersFromDb = [
         {
           _id: new ObjectId(),
           userId: 'existing-user',
           roles: [Roles.FormCreator],
-          scopes: [Scopes.FormRead]
+          scopes: [Scopes.FormRead],
+          email: 'existing@defra.gov.uk',
+          displayName: 'Existing User'
         },
         {
           _id: new ObjectId(),
           roles: [Roles.Admin],
-          scopes: [Scopes.FormRead]
+          scopes: [Scopes.FormRead],
+          email: 'no-id@defra.gov.uk',
+          displayName: 'No ID User'
         },
         {
           _id: new ObjectId(),
           userId: undefined,
           roles: [Roles.FormCreator],
-          scopes: [Scopes.FormRead]
+          scopes: [Scopes.FormRead],
+          email: 'undefined@defra.gov.uk',
+          displayName: 'Undefined ID User'
         },
         {
           _id: new ObjectId(),
           userId: 'another-existing-user',
           roles: [Roles.Admin],
-          scopes: [Scopes.FormRead]
+          scopes: [Scopes.FormRead],
+          email: 'another@defra.gov.uk',
+          displayName: 'Another User'
         }
       ]
 
