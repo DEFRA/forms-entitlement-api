@@ -745,6 +745,7 @@ describe('User service', () => {
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
 
+      // @ts-expect-error - invalid scope outside list of Scopes
       await processAdminUser(mockMember, mockSession, existingUsersMap)
 
       expect(update).toHaveBeenCalledWith(
