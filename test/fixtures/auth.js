@@ -11,7 +11,7 @@ export const auth = {
       name: 'Enrique Chase (Defra)',
       scp: 'forms.user',
       sub: 'hgtL_1p2Me5JkBB6JeB20PyU3YDuP9PjEZwi7m1QGng',
-      oid: '86758ba9-92e7-4287-9751-7705e449688e'
+      oid: 'aaaaaaaa-1111-2222-3333-444444444444'
     },
     scope: RoleScopes[Roles.Admin],
     roles: [Roles.Admin]
@@ -29,7 +29,7 @@ export const superadminAuth = {
       name: 'Super Admin (Defra)',
       scp: 'forms.user',
       sub: 'superadmin-sub-1',
-      oid: 'aaaaaaaa-1111-2222-3333-444444444444'
+      oid: '86758ba9-92e7-4287-9751-7705e449688e'
     },
     scope: RoleScopes[Roles.Superadmin],
     roles: [Roles.Superadmin]
