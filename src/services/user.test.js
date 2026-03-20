@@ -739,12 +739,15 @@ describe('User service', () => {
 
       const existingUser = {
         userId: 'azure-user-1',
+        displayName: 'azure user 1',
+        email: 'azure-user-1@test.com',
         roles: [Roles.Admin],
         scopes: ['some-scope']
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
 
+      // @ts-expect-error - partial mock with invalid scope
       await processAdminUser(mockMember, mockSession, existingUsersMap)
 
       expect(update).toHaveBeenCalledWith(
