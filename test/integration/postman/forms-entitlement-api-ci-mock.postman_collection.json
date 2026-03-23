@@ -130,7 +130,7 @@
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
               "    pm.expect(responseData.entities).to.be.an('array');",
-              "    pm.expect(responseData.entities.length).to.eq(2);",
+              "    pm.expect(responseData.entities.length).to.eq(3);",
               "});",
               ""
             ],
@@ -310,7 +310,7 @@
               "pm.test(\"response is ok\", function () {",
               "    pm.response.to.have.status(200);",
               "    const responseData = pm.response.json();",
-              "    pm.expect(responseData.entities.length).to.eq(1);",
+              "    pm.expect(responseData.entities.length).to.eq(2);",
               "    const userId = pm.collectionVariables.get('user_1_id');",
               "    pm.expect(responseData.entities[0].userId).to.eq(userId);",
               "    pm.expect(responseData.entities[0].roles).to.include('admin');",
