@@ -32,6 +32,26 @@ const testUsers = [
     scopes: [Scopes.FormRead, Scopes.FormEdit],
     createdAt: new Date(),
     updatedAt: new Date()
+  },
+  {
+    userId: '86758ba9-92e7-4287-9751-7705e449688e',
+    email: 'newman-service-account@internal.test',
+    displayName: 'Newman Test User',
+    roles: ['superadmin'],
+    scopes: [
+      Scopes.FormRead,
+      Scopes.FormEdit,
+      Scopes.FormDelete,
+      Scopes.FormPublish,
+      Scopes.UserCreate,
+      Scopes.UserEdit,
+      Scopes.UserDelete,
+      Scopes.FormsBackup,
+      Scopes.ResetSaveAndExit,
+      Scopes.DeadLetterQueues
+    ],
+    createdAt: new Date(),
+    updatedAt: new Date()
   }
 ]
 
