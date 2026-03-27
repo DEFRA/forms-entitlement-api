@@ -142,21 +142,23 @@ describe('User service', () => {
     })
 
     it('should not include a legacy scopes field from the document by default', () => {
-      const result = mapUser({
-        userId: '123',
-        roles: [Roles.Admin],
-        scopes: ['stale-scope']
-      })
+      const result = mapUser(
+        /** @type {any} */ ({
+          userId: '123',
+          roles: [Roles.Admin],
+          scopes: ['stale-scope']
+        })
+      )
       expect(result).not.toHaveProperty('scopes')
     })
 
     it('should include computed scopes when includeScopes is true', () => {
-      const document = {
+      const document = /** @type {any} */ ({
         userId: '123',
         email: 'test@defra.gov.uk',
         displayName: 'Test User',
         roles: [Roles.Admin]
-      }
+      })
 
       const result = mapUser(document, true)
 
@@ -179,11 +181,11 @@ describe('User service', () => {
     })
 
     it('should ignore legacy scopes field and compute scopes from roles when includeScopes is true', () => {
-      const document = {
+      const document = /** @type {any} */ ({
         userId: '123',
         roles: [Roles.Admin],
         scopes: ['stale-scope']
-      }
+      })
 
       const result = mapUser(document, true)
 
@@ -200,7 +202,10 @@ describe('User service', () => {
     })
 
     it('should map user without optional fields', () => {
-      const result = mapUser({ userId: '123', roles: [Roles.Admin] }, true)
+      const result = mapUser(
+        /** @type {any} */ ({ userId: '123', roles: [Roles.Admin] }),
+        true
+      )
 
       expect(result).toEqual({
         userId: '123',
@@ -450,7 +455,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: mockUserId1,
         roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead],
         email: 'test@defra.gov.uk',
         displayName: 'Test User'
       })
@@ -469,7 +473,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: '123',
         roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead],
         email: 'test@example.com',
         displayName: 'Test User'
       })
@@ -497,7 +500,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate],
         email: 'target-admin@example.com',
         displayName: 'Target User'
       })
@@ -516,7 +518,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.Superadmin],
-        scopes: [Scopes.UserCreate],
         email: 'target@example.com',
         displayName: 'Target User'
       })
@@ -535,7 +536,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead],
         email: 'target@example.com',
         displayName: 'Target User'
       })
@@ -562,7 +562,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate],
         email: 'target-admin@example.com',
         displayName: 'Target User'
       })
@@ -637,7 +636,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-admin',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate],
         email: 'admin@example.com',
         displayName: 'Target Admin'
       })
@@ -654,7 +652,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-superadmin',
         roles: [Roles.Superadmin],
-        scopes: [Scopes.UserCreate],
         email: 'superadmin@example.com',
         displayName: 'Target Superadmin'
       })
@@ -674,7 +671,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-admin',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate],
         email: 'admin@example.com',
         displayName: 'Target Admin'
       })
@@ -754,10 +750,10 @@ describe('User service', () => {
         email: 'test@example.com'
       }
 
-      const existingUser = {
+      const existingUser = /** @type {any} */ ({
         userId: 'azure-user-1',
         roles: ['some-other-role', 'another-role']
-      }
+      })
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
 
@@ -780,10 +776,10 @@ describe('User service', () => {
         email: 'test@example.com'
       }
 
-      const existingUser = {
+      const existingUser = /** @type {any} */ ({
         userId: 'azure-user-1',
         roles: [Roles.FormCreator, Roles.Admin, 'other-role']
-      }
+      })
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
 

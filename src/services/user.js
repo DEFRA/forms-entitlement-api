@@ -25,7 +25,7 @@ export const logger = createLogger()
 
 /**
  * Maps a user document from MongoDB to a user object
- * @param {WithId<EntitlementUser>} document - user document (with ID)
+ * @param {WithId<StoredUser>} document - user document (with ID)
  * @param {boolean} [includeScopes] - whether to compute and include the scopes array
  * @returns {EntitlementUser}
  */
@@ -45,7 +45,7 @@ export function mapUser(document, includeScopes = false) {
 }
 
 /**
- * @param {WithId<EntitlementUser>[]} documents - user documents (with ID)
+ * @param {WithId<StoredUser>[]} documents - user documents (with ID)
  */
 export function mapUsers(documents) {
   return documents.map((doc) => mapUser(doc))
@@ -423,7 +423,7 @@ export async function syncAdminUsersFromGroup() {
 }
 
 /**
- * @import { CallingUser } from '~/src/api/types.js'
+ * @import { CallingUser, StoredUser } from '~/src/api/types.js'
  * @import { EntitlementUser } from '@defra/forms-model'
  * @import { AzureUser } from '~/src/services/azure-ad.js'
  * @import { WithId, ClientSession } from 'mongodb'

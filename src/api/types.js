@@ -1,4 +1,9 @@
 /**
+ * User as stored in MongoDB — scopes are not stored, they are computed at read-time
+ * @typedef {Omit<EntitlementUser, 'scopes'>} StoredUser
+ */
+
+/**
  * @typedef {{ userId: string }} UserById
  * @typedef {{ email: string, roles: Roles[] }} UserEntitlementCreateRequest
  * @typedef {{ roles: Roles[] }} UserEntitlementUpdateRequest
@@ -10,6 +15,6 @@
 
 /**
  * @import { Request } from '@hapi/hapi'
- * @import { AuditUser, Roles } from '@defra/forms-model'
+ * @import { AuditUser, EntitlementUser, Roles } from '@defra/forms-model'
  * @import { Db } from 'mongodb'
  */

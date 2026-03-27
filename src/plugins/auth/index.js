@@ -1,3 +1,4 @@
+import { mapScopesToRoles } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 import Jwt from '@hapi/jwt'
 import { StatusCodes } from 'http-status-codes'
@@ -43,7 +44,7 @@ async function validateUserCredentials(artifacts) {
       isValid: true,
       credentials: {
         user,
-        scope: entitlement.scopes,
+        scope: mapScopesToRoles(entitlement.roles),
         roles: entitlement.roles
       }
     }
