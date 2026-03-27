@@ -28,7 +28,10 @@ describe('entitlement-events', () => {
         type: AuditEventMessageType.ENTITLEMENT_CREATED,
         entityId: azureUser.id,
         createdAt: expect.any(Date),
-        createdBy: callingUser,
+        createdBy: {
+          id: callingUser.id,
+          displayName: callingUser.displayName
+        },
         messageCreatedAt: expect.any(Date),
         data: {
           userId: azureUser.id,
@@ -49,7 +52,10 @@ describe('entitlement-events', () => {
         type: AuditEventMessageType.ENTITLEMENT_UPDATED,
         entityId: azureUser.id,
         createdAt: expect.any(Date),
-        createdBy: callingUser,
+        createdBy: {
+          id: callingUser.id,
+          displayName: callingUser.displayName
+        },
         messageCreatedAt: expect.any(Date),
         data: {
           userId: azureUser.id,
@@ -68,7 +74,10 @@ describe('entitlement-events', () => {
         type: AuditEventMessageType.ENTITLEMENT_DELETED,
         entityId: azureUser.id,
         createdAt: expect.any(Date),
-        createdBy: callingUser,
+        createdBy: {
+          id: callingUser.id,
+          displayName: callingUser.displayName
+        },
         messageCreatedAt: expect.any(Date),
         data: {
           userId: azureUser.id,

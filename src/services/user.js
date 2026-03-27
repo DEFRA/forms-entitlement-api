@@ -1,8 +1,9 @@
-import { getErrorMessage } from '@defra/forms-model'
+import { Roles, getErrorMessage, mapScopesToRoles } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 import { StatusCodes } from 'http-status-codes'
 
 import { config } from '~/src/config/index.js'
+import { validateUserManagement } from '~/src/helpers/authorisation.js'
 import { createLogger } from '~/src/helpers/logging/logger.js'
 import {
   publishEntitlementCreatedEvent,
@@ -11,8 +12,6 @@ import {
 } from '~/src/messaging/publish.js'
 import { client } from '~/src/mongo.js'
 import { withLock } from '~/src/repositories/lock-repository.js'
-import { Roles } from '~/src/repositories/roles.js'
-import { mapScopesToRoles } from '~/src/repositories/scopes.js'
 import {
   create,
   get,
@@ -26,18 +25,12 @@ export const logger = createLogger()
 
 /**
  * Maps a user document from MongoDB to a user object
- * @param {Partial<UserEntitlementDocument>} document - user document (with ID)
+ * @param {WithId<EntitlementUser>} document - user document (with ID)
  * @param {boolean} [includeScopes] - whether to compute and include the scopes array
- * @returns {UserEntitlementDocument}
+ * @returns {EntitlementUser}
  */
 export function mapUser(document, includeScopes = false) {
-  if (!document.userId || !document.roles) {
-    throw Error(
-      'User is malformed in the database. Expected fields are missing.'
-    )
-  }
-
-  const user = /** @type {UserEntitlementDocument} */ ({
+  const user = /** @type {EntitlementUser} */ ({
     userId: document.userId,
     roles: document.roles
   })
@@ -58,7 +51,7 @@ export function mapUser(document, includeScopes = false) {
 }
 
 /**
- * @param {WithId<Partial<UserEntitlementDocument>>[]} documents - user documents (with ID)
+ * @param {WithId<EntitlementUser>[]} documents - user documents (with ID)
  */
 export function mapUsers(documents) {
   return documents.map((doc) => mapUser(doc))
@@ -103,8 +96,8 @@ export async function getUser(userId) {
 /**
  * Add a user with Azure AD validation by email
  * @param {string} email - The user's email address
- * @param {string[]} roles
- * @param {AuditUser} callingUser
+ * @param {Roles[]} roles
+ * @param {CallingUser} callingUser
  */
 export async function addUser(email, roles, callingUser) {
   logger.info(`Adding user with email '${email}'`)
@@ -115,6 +108,13 @@ export async function addUser(email, roles, callingUser) {
     const azureAdService = getAzureAdService()
     const azureUser = await azureAdService.getUserByEmail(email)
     logger.info(`User found in Azure AD with ID: ${azureUser.id}`)
+
+    validateUserManagement(
+      callingUser.id,
+      callingUser.roles,
+      azureUser.id,
+      roles
+    )
 
     await session.withTransaction(async () => {
       const newUserEntity = await createUserInternal(
@@ -155,11 +155,21 @@ export async function addUser(email, roles, callingUser) {
 /**
  * Update a user
  * @param {string} userId
- * @param {string[]} roles
- * @param {AuditUser} callingUser
+ * @param {Roles[]} roles
+ * @param {CallingUser} callingUser
  */
 export async function updateUser(userId, roles, callingUser) {
   logger.info(`Updating user with userID '${userId}'`)
+
+  const existingUser = await findExistingUser(userId)
+
+  validateUserManagement(
+    callingUser.id,
+    callingUser.roles,
+    userId,
+    roles,
+    existingUser?.roles ?? []
+  )
 
   const session = client.startSession()
 
@@ -195,22 +205,30 @@ export async function updateUser(userId, roles, callingUser) {
 /**
  * Delete a user
  * @param {string} userId
- * @param {AuditUser} callingUser
+ * @param {CallingUser} callingUser
  */
 export async function deleteUser(userId, callingUser) {
   logger.info(`Deleting user with userID '${userId}'`)
 
+  const existingUser = await findExistingUser(userId)
+
+  validateUserManagement(
+    callingUser.id,
+    callingUser.roles,
+    userId,
+    [],
+    existingUser?.roles ?? []
+  )
+
+  const azureUser = /** @type {AzureUser} */ ({
+    id: existingUser?.userId ?? userId,
+    displayName: existingUser?.displayName ?? '',
+    email: existingUser?.email ?? ''
+  })
+
   const session = client.startSession()
 
   try {
-    const user = await findExistingUser(userId)
-
-    const azureUser = /** @type {AzureUser} */ ({
-      id: user?.userId,
-      displayName: user?.displayName,
-      email: user?.email
-    })
-
     await session.withTransaction(async () => {
       await remove(userId, session)
     })
@@ -237,7 +255,7 @@ export async function deleteUser(userId, callingUser) {
 /**
  * Check if user exists and return user data, or null if not found
  * @param {string} userId - User ID to check
- * @returns {Promise<Partial<UserEntitlementDocument>|null>} User data or null if not found
+ * @returns {Promise<Partial<EntitlementUser>|null>} User data or null if not found
  */
 async function findExistingUser(userId) {
   try {
@@ -245,7 +263,7 @@ async function findExistingUser(userId) {
   } catch (error) {
     if (
       Boom.isBoom(error) &&
-      error.output.statusCode === Number(StatusCodes.NOT_FOUND)
+      error.output.statusCode === Number(StatusCodes.NOT_FOUND) // eslint-disable-line @typescript-eslint/no-unnecessary-type-conversion -- StatusCodes is a numeric enum
     ) {
       return null
     }
@@ -256,24 +274,19 @@ async function findExistingUser(userId) {
 /**
  * Create a user with given roles (internal function used within transactions)
  * @param {string} userId - Azure AD user ID
- * @param {string[]} roles - Roles to assign
+ * @param {Roles[]} roles - Roles to assign
  * @param {ClientSession} session - MongoDB session for transaction
- * @param {string} [email] - User's email address
- * @param {string} [displayName] - User's display name
+ * @param {string} email - User's email address
+ * @param {string} displayName - User's display name
  */
 async function createUserInternal(userId, roles, session, email, displayName) {
-  const user = /** @type {UserEntitlementDocument} */ ({
+  const user = /** @type {EntitlementUser} */ ({
     userId,
     roles
   })
 
-  if (email) {
-    user.email = email
-  }
-
-  if (displayName) {
-    user.displayName = displayName
-  }
+  user.email = email
+  user.displayName = displayName
 
   return create(user, session)
 }
@@ -281,7 +294,7 @@ async function createUserInternal(userId, roles, session, email, displayName) {
 /**
  * Update a user with given roles (internal function used within transactions)
  * @param {string} userId - Azure AD user ID
- * @param {string[]} roles - Roles to assign
+ * @param {Roles[]} roles - Roles to assign
  * @param {ClientSession} session - MongoDB session for transaction
  */
 async function updateUserInternal(userId, roles, session) {
@@ -289,14 +302,15 @@ async function updateUserInternal(userId, roles, session) {
     userId,
     roles
   }
+
   return update(userId, user, session)
 }
 
 /**
- * Process a single admin user - create if doesn't exist, add admin role if missing
+ * Process a single user from the role editor group - create if doesn't exist, assign superadmin role if missing
  * @param {AzureUser} member - Azure AD group member
  * @param {ClientSession} session - MongoDB session for transaction
- * @param {Map<string, Partial<UserEntitlementDocument>>} existingUsers - Map of existing users by userId
+ * @param {Map<string, Partial<EntitlementUser>>} existingUsers - Map of existing users by userId
  */
 export async function processAdminUser(
   member,
@@ -308,24 +322,26 @@ export async function processAdminUser(
   if (existingUser) {
     const userRoles = existingUser.roles ?? []
 
-    if (userRoles.length !== 1 || !userRoles.includes(Roles.Admin)) {
-      await updateUserInternal(member.id, [Roles.Admin], session)
+    if (userRoles.length !== 1 || !userRoles.includes(Roles.Superadmin)) {
+      await updateUserInternal(member.id, [Roles.Superadmin], session)
       logger.info(
-        `Updated user to admin role only: ${member.id} (previous roles: ${userRoles.join(', ')})`
+        `Updated user to superadmin role only: ${member.id} (previous roles: ${userRoles.join(', ')})`
       )
     } else {
-      logger.info(`User already has correct admin privileges: ${member.id}`)
+      logger.info(
+        `User already has correct superadmin privileges: ${member.id}`
+      )
     }
   } else {
-    // User doesn't exist, create them with admin role
+    // User doesn't exist, create them with superadmin role
     await createUserInternal(
       member.id,
-      [Roles.Admin],
+      [Roles.Superadmin],
       session,
       member.email,
       member.displayName
     )
-    logger.info(`Created admin user: ${member.id} (${member.displayName})`)
+    logger.info(`Created superadmin user: ${member.id} (${member.displayName})`)
   }
 }
 
@@ -413,8 +429,8 @@ export async function syncAdminUsersFromGroup() {
 }
 
 /**
- * @import { AuditUser } from '@defra/forms-model'
- * @import { UserEntitlementDocument } from '~/src/api/types.js'
+ * @import { CallingUser } from '~/src/api/types.js'
+ * @import { EntitlementUser } from '@defra/forms-model'
  * @import { AzureUser } from '~/src/services/azure-ad.js'
  * @import { WithId, ClientSession } from 'mongodb'
  */

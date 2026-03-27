@@ -1,8 +1,9 @@
+import { Roles, Scopes } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 
 import { createServer } from '~/src/api/server.js'
 import * as allUsers from '~/src/services/user.js'
-import { auth } from '~/test/fixtures/auth.js'
+import { auth, noEntitlementAuth } from '~/test/fixtures/auth.js'
 
 jest.mock('~/src/services/user.js')
 jest.mock('~/src/mongo.js')
@@ -12,7 +13,8 @@ jest.mock('~/src/services/scheduler.js', () => ({
 
 const expectedCallingUser = {
   id: auth.credentials.user.oid,
-  displayName: 'Enrique Chase'
+  displayName: 'Enrique Chase',
+  roles: auth.credentials.roles
 }
 
 describe('User route', () => {
@@ -52,8 +54,10 @@ describe('User route', () => {
       test('should return the user', async () => {
         jest.mocked(allUsers.getUser).mockResolvedValue({
           userId: '456',
-          roles: ['admin'],
-          scopes: ['user-create', 'user-edit']
+          email: 'a@b.com',
+          displayName: 'Enrique Chase',
+          roles: [Roles.Admin],
+          scopes: [Scopes.UserCreate, Scopes.UserEdit]
         })
 
         const response = await server.inject({
@@ -67,8 +71,10 @@ describe('User route', () => {
         expect(response.result).toEqual({
           entity: {
             userId: '456',
-            roles: ['admin'],
-            scopes: ['user-create', 'user-edit']
+            email: 'a@b.com',
+            displayName: 'Enrique Chase',
+            roles: [Roles.Admin],
+            scopes: [Scopes.UserCreate, Scopes.UserEdit]
           }
         })
 
@@ -86,8 +92,10 @@ describe('User route', () => {
 
         jest.mocked(allUsers.getUser).mockResolvedValue({
           userId: '456',
-          roles: ['admin'],
-          scopes: ['user-create', 'user-edit']
+          email: 'test@example.com',
+          displayName: 'Test User',
+          roles: [Roles.Admin],
+          scopes: [Scopes.UserCreate, Scopes.UserEdit]
         })
 
         const response = await server.inject({
@@ -96,7 +104,7 @@ describe('User route', () => {
           auth,
           payload: {
             email: 'test@example.com',
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -108,14 +116,16 @@ describe('User route', () => {
           displayName: 'Test User',
           entity: {
             userId: '456',
-            roles: ['admin'],
-            scopes: ['user-create', 'user-edit']
+            email: 'test@example.com',
+            displayName: 'Test User',
+            roles: [Roles.Admin],
+            scopes: [Scopes.UserCreate, Scopes.UserEdit]
           }
         })
 
         expect(allUsers.addUser).toHaveBeenCalledWith(
           'test@example.com',
-          ['admin'],
+          [Roles.Admin],
           expectedCallingUser
         )
         expect(allUsers.getUser).toHaveBeenCalledWith('456')
@@ -133,7 +143,7 @@ describe('User route', () => {
           url: '/users/456',
           auth,
           payload: {
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -143,7 +153,7 @@ describe('User route', () => {
 
         expect(allUsers.updateUser).toHaveBeenCalledWith(
           '456',
-          ['admin'],
+          [Roles.Admin],
           expectedCallingUser
         )
       })
@@ -171,31 +181,6 @@ describe('User route', () => {
         )
       })
     })
-
-    describe('GET /roles', () => {
-      test('should return list of roles with their names and codes', async () => {
-        const response = await server.inject({
-          method: 'GET',
-          url: '/roles',
-          auth
-        })
-
-        expect(response.statusCode).toBe(200)
-
-        const result = JSON.parse(response.payload)
-        expect(result.roles).toHaveLength(2)
-        expect(result.roles).toEqual([
-          {
-            name: 'Admin',
-            code: 'admin'
-          },
-          {
-            name: 'Form creator',
-            code: 'form-creator'
-          }
-        ])
-      })
-    })
   })
 
   describe('Error handling', () => {
@@ -209,7 +194,7 @@ describe('User route', () => {
           auth,
           payload: {
             email: 'test@example.com',
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -226,7 +211,7 @@ describe('User route', () => {
           auth,
           payload: {
             email: 'test@example.com',
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -247,7 +232,7 @@ describe('User route', () => {
           auth,
           payload: {
             email: 'test@example.com',
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -266,7 +251,7 @@ describe('User route', () => {
           url: '/users/456',
           auth,
           payload: {
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -282,7 +267,7 @@ describe('User route', () => {
           url: '/users/456',
           auth,
           payload: {
-            roles: ['admin']
+            roles: [Roles.Admin]
           }
         })
 
@@ -331,6 +316,140 @@ describe('User route', () => {
         })
 
         expect(response.statusCode).toBe(400)
+      })
+    })
+  })
+
+  describe('Scope enforcement', () => {
+    describe('POST /users', () => {
+      test('should return 403 when caller lacks user-create scope', async () => {
+        const response = await server.inject({
+          method: 'POST',
+          url: '/users',
+          auth: noEntitlementAuth,
+          payload: {
+            email: 'test@example.com',
+            roles: ['form-creator']
+          }
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+
+      test('should return 403 when admin tries to create admin/superadmin user', async () => {
+        jest
+          .mocked(allUsers.addUser)
+          .mockRejectedValue(
+            Boom.forbidden('You do not have sufficient privileges')
+          )
+
+        const response = await server.inject({
+          method: 'POST',
+          url: '/users',
+          auth,
+          payload: {
+            email: 'test@example.com',
+            roles: ['admin']
+          }
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+    })
+
+    describe('PUT /users/{userId}', () => {
+      test('should return 403 when caller lacks user-edit scope', async () => {
+        const response = await server.inject({
+          method: 'PUT',
+          url: '/users/456',
+          auth: noEntitlementAuth,
+          payload: {
+            roles: ['form-creator']
+          }
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+
+      test('should return 403 for self-management attempt', async () => {
+        jest
+          .mocked(allUsers.updateUser)
+          .mockRejectedValue(
+            Boom.forbidden('You cannot perform this action on your own account')
+          )
+
+        const response = await server.inject({
+          method: 'PUT',
+          url: `/users/${auth.credentials.user.oid}`,
+          auth,
+          payload: {
+            roles: ['form-creator']
+          }
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+    })
+
+    describe('DELETE /users/{userId}', () => {
+      test('should return 403 when caller lacks user-delete scope', async () => {
+        const response = await server.inject({
+          method: 'DELETE',
+          url: '/users/456',
+          auth: noEntitlementAuth
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+
+      test('should return 403 for self-management attempt', async () => {
+        jest
+          .mocked(allUsers.deleteUser)
+          .mockRejectedValue(
+            Boom.forbidden('You cannot perform this action on your own account')
+          )
+
+        const response = await server.inject({
+          method: 'DELETE',
+          url: `/users/${auth.credentials.user.oid}`,
+          auth
+        })
+
+        expect(response.statusCode).toBe(403)
+      })
+    })
+
+    describe('GET /users', () => {
+      test('should succeed with no-entitlement auth (no scope required)', async () => {
+        jest.mocked(allUsers.getAllUsers).mockResolvedValue([])
+
+        const response = await server.inject({
+          method: 'GET',
+          url: '/users',
+          auth: noEntitlementAuth
+        })
+
+        expect(response.statusCode).toBe(200)
+      })
+    })
+
+    describe('GET /users/{userId}', () => {
+      test('should succeed with no-entitlement auth', async () => {
+        jest.mocked(allUsers.getUser).mockResolvedValue({
+          userId: '456',
+          displayName: 'Enrique Chase',
+          email: 'enrique.chase@example.com',
+          roles: [Roles.Admin],
+          scopes: [Scopes.UserCreate]
+        })
+
+        const response = await server.inject({
+          method: 'GET',
+          url: '/users/456',
+          auth: noEntitlementAuth
+        })
+
+        expect(response.statusCode).toBe(200)
       })
     })
   })

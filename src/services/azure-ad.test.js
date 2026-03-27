@@ -106,6 +106,12 @@ describe('Azure AD Service', () => {
             '@odata.type': '#microsoft.graph.group',
             id: 'group1',
             displayName: 'Test Group'
+          },
+          {
+            '@odata.type': '#microsoft.graph.user',
+            id: 'user2',
+            displayName: null,
+            userPrincipalName: 'jane.smith@defra.gov.uk'
           }
         ]
       }
@@ -123,6 +129,11 @@ describe('Azure AD Service', () => {
         {
           id: 'user2',
           displayName: 'Jane Smith',
+          email: 'jane.smith@defra.gov.uk'
+        },
+        {
+          id: 'user2',
+          displayName: 'jane.smith@defra.gov.uk',
           email: 'jane.smith@defra.gov.uk'
         }
       ])

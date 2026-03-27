@@ -8,11 +8,17 @@ on:
     paths:
       - '.browserslistrc'
       - 'babel.config.*'
+      - 'postcss.config.*'
+      - 'webpack.config.*'
       - 'Dockerfile'
       - 'src/**'
       - '!**/*.test.*'
 
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number manual override'
+        required: false
 
 concurrency:
   group: publish
@@ -24,7 +30,7 @@ permissions:
 
 env:
   AWS_REGION: eu-west-2
-  AWS_ACCOUNT_ID: "094954420758"
+  AWS_ACCOUNT_ID: '094954420758'
 
 jobs:
   build:
@@ -33,9 +39,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build and Publish
         uses: DEFRA/cdp-build-action/build@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          version: ${{ inputs.version }}

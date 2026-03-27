@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import { Roles } from '@defra/forms-model'
 import { MongoClient } from 'mongodb'
 
 const MONGO_URI =
@@ -10,7 +11,7 @@ const testUsers = [
     userId: 'user-email1-mail-com',
     email: 'email1@mail.com',
     displayName: 'Test User 1',
-    roles: ['admin'],
+    roles: [Roles.Admin],
     createdAt: new Date(),
     updatedAt: new Date()
   },
@@ -18,7 +19,15 @@ const testUsers = [
     userId: 'user-email2-mail-com',
     email: 'email2@mail.com',
     displayName: 'Test User 2',
-    roles: ['form-creator'],
+    roles: [Roles.FormCreator],
+    createdAt: new Date(),
+    updatedAt: new Date()
+  },
+  {
+    userId: '86758ba9-92e7-4287-9751-7705e449688e',
+    email: 'newman-service-account@internal.test',
+    displayName: 'Newman Test User',
+    roles: [Roles.Superadmin],
     createdAt: new Date(),
     updatedAt: new Date()
   }

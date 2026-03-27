@@ -1,4 +1,9 @@
-import { UserCredentials, ServerApplicationState } from '@hapi/hapi'
+import {
+  AuthCredentials,
+  UserCredentials,
+  ServerApplicationState
+} from '@hapi/hapi'
+import { Roles } from '@defra/forms-model'
 
 declare module '@hapi/hapi' {
   interface UserCredentials {
@@ -11,6 +16,13 @@ declare module '@hapi/hapi' {
      * Groups of the user
      */
     groups?: string[]
+  }
+
+  interface AuthCredentials {
+    /**
+     * Roles resolved from the user entitlement record
+     */
+    roles: Roles[]
   }
 
   interface ServerApplicationState {
