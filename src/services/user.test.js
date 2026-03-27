@@ -3,11 +3,7 @@ import Boom from '@hapi/boom'
 import { ObjectId } from 'mongodb'
 import { pino } from 'pino'
 
-import {
-  mockUserId1,
-  mockUserList,
-  mockUserListWithIds
-} from '~/src/api/__stubs__/users.js'
+import { mockUserId1, mockUserListWithIds } from '~/src/api/__stubs__/users.js'
 import { config } from '~/src/config/index.js'
 import {
   azureUser,
@@ -125,14 +121,13 @@ describe('User service', () => {
   })
 
   describe('mapUser', () => {
-    it('should map a complete user document', () => {
+    it('should not include scopes by default', () => {
       const document = {
         _id: new ObjectId(),
         userId: '123',
         email: 'test@defra.gov.uk',
         displayName: 'Test User',
-        roles: [Roles.Admin],
-        scopes: [Scopes.FormRead]
+        roles: [Roles.Admin]
       }
 
       const result = mapUser(document)
@@ -141,8 +136,90 @@ describe('User service', () => {
         userId: '123',
         email: 'test@defra.gov.uk',
         displayName: 'Test User',
+        roles: [Roles.Admin]
+      })
+      expect(result).not.toHaveProperty('scopes')
+    })
+
+    it('should not include a legacy scopes field from the document by default', () => {
+      const result = mapUser(
+        /** @type {any} */ ({
+          userId: '123',
+          roles: [Roles.Admin],
+          scopes: ['stale-scope']
+        })
+      )
+      expect(result).not.toHaveProperty('scopes')
+    })
+
+    it('should include computed scopes when includeScopes is true', () => {
+      const document = /** @type {any} */ ({
+        userId: '123',
+        email: 'test@defra.gov.uk',
+        displayName: 'Test User',
+        roles: [Roles.Admin]
+      })
+
+      const result = mapUser(document, true)
+
+      expect(result).toEqual({
+        userId: '123',
+        email: 'test@defra.gov.uk',
+        displayName: 'Test User',
         roles: [Roles.Admin],
-        scopes: [Scopes.FormRead]
+        scopes: [
+          Scopes.FormDelete,
+          Scopes.FormEdit,
+          Scopes.FormRead,
+          Scopes.FormPublish,
+          Scopes.UserCreate,
+          Scopes.UserDelete,
+          Scopes.UserEdit,
+          Scopes.FormsFeedback
+        ]
+      })
+    })
+
+    it('should ignore legacy scopes field and compute scopes from roles when includeScopes is true', () => {
+      const document = /** @type {any} */ ({
+        userId: '123',
+        roles: [Roles.Admin],
+        scopes: ['stale-scope']
+      })
+
+      const result = mapUser(document, true)
+
+      expect(result.scopes).toEqual([
+        Scopes.FormDelete,
+        Scopes.FormEdit,
+        Scopes.FormRead,
+        Scopes.FormPublish,
+        Scopes.UserCreate,
+        Scopes.UserDelete,
+        Scopes.UserEdit,
+        Scopes.FormsFeedback
+      ])
+    })
+
+    it('should map user without optional fields', () => {
+      const result = mapUser(
+        /** @type {any} */ ({ userId: '123', roles: [Roles.Admin] }),
+        true
+      )
+
+      expect(result).toEqual({
+        userId: '123',
+        roles: [Roles.Admin],
+        scopes: [
+          Scopes.FormDelete,
+          Scopes.FormEdit,
+          Scopes.FormRead,
+          Scopes.FormPublish,
+          Scopes.UserCreate,
+          Scopes.UserDelete,
+          Scopes.UserEdit,
+          Scopes.FormsFeedback
+        ]
       })
     })
   })
@@ -152,7 +229,27 @@ describe('User service', () => {
       const result = mapUsers(mockUserListWithIds)
 
       expect(result).toHaveLength(3)
-      expect(result).toEqual(mockUserList)
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          userId: 'user-id-admin',
+          roles: ['admin']
+        })
+      )
+      expect(result[0]).not.toHaveProperty('scopes')
+      expect(result[1]).toEqual(
+        expect.objectContaining({
+          userId: 'user-id-creator2',
+          roles: ['form-creator']
+        })
+      )
+      expect(result[1]).not.toHaveProperty('scopes')
+      expect(result[2]).toEqual(
+        expect.objectContaining({
+          userId: 'user-id-creator',
+          roles: ['form-creator']
+        })
+      )
+      expect(result[2]).not.toHaveProperty('scopes')
     })
 
     it('should handle empty array', () => {
@@ -168,7 +265,13 @@ describe('User service', () => {
       const result = await getAllUsers()
 
       expect(result).toHaveLength(3)
-      expect(result).toEqual(mockUserList)
+      expect(result[0]).toEqual(
+        expect.objectContaining({
+          userId: 'user-id-admin',
+          roles: ['admin']
+        })
+      )
+      expect(result[0]).not.toHaveProperty('scopes')
     })
 
     it('should throw if repository error', async () => {
@@ -184,7 +287,22 @@ describe('User service', () => {
 
       const result = await getUser('123')
 
-      expect(result).toEqual(mockUserList[0])
+      expect(result).toEqual(
+        expect.objectContaining({
+          userId: 'user-id-admin',
+          roles: ['admin'],
+          scopes: expect.arrayContaining([
+            Scopes.FormDelete,
+            Scopes.FormEdit,
+            Scopes.FormRead,
+            Scopes.FormPublish,
+            Scopes.UserCreate,
+            Scopes.UserDelete,
+            Scopes.UserEdit,
+            Scopes.FormsFeedback
+          ])
+        })
+      )
     })
 
     it('should throw if repository error', async () => {
@@ -337,7 +455,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: mockUserId1,
         roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead],
         email: 'test@defra.gov.uk',
         displayName: 'Test User'
       })
@@ -356,7 +473,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: '123',
         roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead],
         email: 'test@example.com',
         displayName: 'Test User'
       })
@@ -384,7 +500,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate],
         email: 'target-admin@example.com',
         displayName: 'Target User'
       })
@@ -403,7 +518,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.Superadmin],
-        scopes: [Scopes.UserCreate],
         email: 'target@example.com',
         displayName: 'Target User'
       })
@@ -422,7 +536,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead],
         email: 'target@example.com',
         displayName: 'Target User'
       })
@@ -449,7 +562,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-user',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate],
         email: 'target-admin@example.com',
         displayName: 'Target User'
       })
@@ -472,8 +584,7 @@ describe('User service', () => {
         userId: azureUser.id,
         email: azureUser.email,
         displayName: azureUser.displayName,
-        roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead]
+        roles: [Roles.FormCreator]
       })
 
       const result = await deleteUser(mockUserId1, callingUser)
@@ -487,8 +598,7 @@ describe('User service', () => {
         userId: '123',
         email: 'test@example.com',
         displayName: 'Test User',
-        roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead]
+        roles: [Roles.FormCreator]
       })
 
       mockSession.withTransaction.mockRejectedValue(new Error('Delete failed'))
@@ -526,7 +636,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-admin',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate],
         email: 'admin@example.com',
         displayName: 'Target Admin'
       })
@@ -543,7 +652,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-superadmin',
         roles: [Roles.Superadmin],
-        scopes: [Scopes.UserCreate],
         email: 'superadmin@example.com',
         displayName: 'Target Superadmin'
       })
@@ -563,7 +671,6 @@ describe('User service', () => {
         _id: new ObjectId(),
         userId: 'target-admin',
         roles: [Roles.Admin],
-        scopes: [Scopes.UserCreate],
         email: 'admin@example.com',
         displayName: 'Target Admin'
       })
@@ -599,6 +706,10 @@ describe('User service', () => {
         }),
         mockSession
       )
+      expect(create).toHaveBeenCalledWith(
+        expect.not.objectContaining({ scopes: expect.anything() }),
+        mockSession
+      )
     })
 
     it('should replace form-creator role with superadmin role only', async () => {
@@ -610,8 +721,7 @@ describe('User service', () => {
 
       const existingUser = {
         userId: 'azure-user-1',
-        roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead]
+        roles: [Roles.FormCreator]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -625,6 +735,11 @@ describe('User service', () => {
         }),
         mockSession
       )
+      expect(update).toHaveBeenCalledWith(
+        'azure-user-1',
+        expect.not.objectContaining({ scopes: expect.anything() }),
+        mockSession
+      )
       expect(create).not.toHaveBeenCalled()
     })
 
@@ -635,11 +750,10 @@ describe('User service', () => {
         email: 'test@example.com'
       }
 
-      const existingUser = {
+      const existingUser = /** @type {any} */ ({
         userId: 'azure-user-1',
-        roles: [Roles.FormCreator],
-        scopes: [Scopes.FormRead]
-      }
+        roles: ['some-other-role', 'another-role']
+      })
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
 
@@ -662,11 +776,10 @@ describe('User service', () => {
         email: 'test@example.com'
       }
 
-      const existingUser = {
+      const existingUser = /** @type {any} */ ({
         userId: 'azure-user-1',
-        roles: [Roles.FormCreator, Roles.Admin],
-        scopes: [Scopes.FormRead]
-      }
+        roles: [Roles.FormCreator, Roles.Admin, 'other-role']
+      })
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
 
@@ -691,8 +804,7 @@ describe('User service', () => {
 
       const existingUser = {
         userId: 'azure-user-1',
-        roles: [Roles.Superadmin],
-        scopes: [Scopes.FormRead]
+        roles: [Roles.Superadmin]
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -712,8 +824,7 @@ describe('User service', () => {
 
       const existingUser = {
         userId: 'azure-user-1',
-        roles: undefined,
-        scopes: [Scopes.FormRead]
+        roles: undefined
       }
 
       const existingUsersMap = new Map([['azure-user-1', existingUser]])
@@ -841,14 +952,12 @@ describe('User service', () => {
           _id: new ObjectId(),
           userId: 'existing-user',
           roles: [Roles.FormCreator],
-          scopes: [Scopes.FormRead],
           email: 'existing@defra.gov.uk',
           displayName: 'Existing User'
         },
         {
           _id: new ObjectId(),
           roles: [Roles.Admin],
-          scopes: [Scopes.FormRead],
           email: 'no-id@defra.gov.uk',
           displayName: 'No ID User'
         },
@@ -856,7 +965,6 @@ describe('User service', () => {
           _id: new ObjectId(),
           userId: undefined,
           roles: [Roles.FormCreator],
-          scopes: [Scopes.FormRead],
           email: 'undefined@defra.gov.uk',
           displayName: 'Undefined ID User'
         },
@@ -864,7 +972,6 @@ describe('User service', () => {
           _id: new ObjectId(),
           userId: 'another-existing-user',
           roles: [Roles.Admin],
-          scopes: [Scopes.FormRead],
           email: 'another@defra.gov.uk',
           displayName: 'Another User'
         }

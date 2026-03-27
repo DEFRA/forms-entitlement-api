@@ -25,23 +25,27 @@ export const logger = createLogger()
 
 /**
  * Maps a user document from MongoDB to a user object
- * @param {WithId<EntitlementUser>} document - user document (with ID)
+ * @param {WithId<StoredUser>} document - user document (with ID)
+ * @param {boolean} [includeScopes] - whether to compute and include the scopes array
  * @returns {EntitlementUser}
  */
-export function mapUser(document) {
+export function mapUser(document, includeScopes = false) {
   const user = /** @type {EntitlementUser} */ ({
     userId: document.userId,
     roles: document.roles,
-    scopes: document.scopes,
     email: document.email,
     displayName: document.displayName
   })
+
+  if (includeScopes) {
+    user.scopes = mapScopesToRoles(document.roles)
+  }
 
   return user
 }
 
 /**
- * @param {WithId<EntitlementUser>[]} documents - user documents (with ID)
+ * @param {WithId<StoredUser>[]} documents - user documents (with ID)
  */
 export function mapUsers(documents) {
   return documents.map((doc) => mapUser(doc))
@@ -73,7 +77,7 @@ export async function getUser(userId) {
   logger.info(`Getting user with userID '${userId}'`)
 
   try {
-    return mapUser(await get(userId))
+    return mapUser(await get(userId), true)
   } catch (err) {
     logger.info(
       `[getUser] Failed to get user with userID '${userId}' - ${getErrorMessage(err)}`
@@ -272,8 +276,7 @@ async function findExistingUser(userId) {
 async function createUserInternal(userId, roles, session, email, displayName) {
   const user = /** @type {EntitlementUser} */ ({
     userId,
-    roles,
-    scopes: mapScopesToRoles(roles)
+    roles
   })
 
   user.email = email
@@ -291,8 +294,7 @@ async function createUserInternal(userId, roles, session, email, displayName) {
 async function updateUserInternal(userId, roles, session) {
   const user = {
     userId,
-    roles,
-    scopes: mapScopesToRoles(roles)
+    roles
   }
 
   return update(userId, user, session)
@@ -421,7 +423,7 @@ export async function syncAdminUsersFromGroup() {
 }
 
 /**
- * @import { CallingUser } from '~/src/api/types.js'
+ * @import { CallingUser, StoredUser } from '~/src/api/types.js'
  * @import { EntitlementUser } from '@defra/forms-model'
  * @import { AzureUser } from '~/src/services/azure-ad.js'
  * @import { WithId, ClientSession } from 'mongodb'

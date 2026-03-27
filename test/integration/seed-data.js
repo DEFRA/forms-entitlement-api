@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { Roles, Scopes } from '@defra/forms-model'
+import { Roles } from '@defra/forms-model'
 import { MongoClient } from 'mongodb'
 
 const MONGO_URI =
@@ -11,16 +11,7 @@ const testUsers = [
     userId: 'user-email1-mail-com',
     email: 'email1@mail.com',
     displayName: 'Test User 1',
-    roles: ['admin'],
-    scopes: [
-      Scopes.FormRead,
-      Scopes.FormEdit,
-      Scopes.FormDelete,
-      Scopes.FormPublish,
-      Scopes.UserCreate,
-      Scopes.UserEdit,
-      Scopes.UserDelete
-    ],
+    roles: [Roles.Admin],
     createdAt: new Date(),
     updatedAt: new Date()
   },
@@ -29,7 +20,6 @@ const testUsers = [
     email: 'email2@mail.com',
     displayName: 'Test User 2',
     roles: [Roles.FormCreator],
-    scopes: [Scopes.FormRead, Scopes.FormEdit],
     createdAt: new Date(),
     updatedAt: new Date()
   },
@@ -37,19 +27,7 @@ const testUsers = [
     userId: '86758ba9-92e7-4287-9751-7705e449688e',
     email: 'newman-service-account@internal.test',
     displayName: 'Newman Test User',
-    roles: ['superadmin'],
-    scopes: [
-      Scopes.FormRead,
-      Scopes.FormEdit,
-      Scopes.FormDelete,
-      Scopes.FormPublish,
-      Scopes.UserCreate,
-      Scopes.UserEdit,
-      Scopes.UserDelete,
-      Scopes.FormsBackup,
-      Scopes.ResetSaveAndExit,
-      Scopes.DeadLetterQueues
-    ],
+    roles: [Roles.Superadmin],
     createdAt: new Date(),
     updatedAt: new Date()
   }

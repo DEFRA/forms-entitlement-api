@@ -1,4 +1,4 @@
-import { Scopes } from '@defra/forms-model'
+import { Roles, Scopes } from '@defra/forms-model'
 
 const mockActualTestErrorFn = jest.fn()
 const mockActualTestWarnFn = jest.fn()
@@ -132,8 +132,7 @@ describe('auth plugin', () => {
 
       mockGet.mockResolvedValue({
         userId: 'test-oid-123',
-        roles: ['admin'],
-        scopes: [Scopes.UserCreate, Scopes.UserEdit, Scopes.UserDelete]
+        roles: [Roles.Admin]
       })
 
       const artifacts = /** @type {any} */ ({
@@ -148,8 +147,17 @@ describe('auth plugin', () => {
         isValid: true,
         credentials: {
           user: mockUser,
-          scope: ['user-create', 'user-edit', 'user-delete'],
-          roles: ['admin']
+          scope: expect.arrayContaining([
+            Scopes.UserCreate,
+            Scopes.UserEdit,
+            Scopes.UserDelete,
+            Scopes.FormRead,
+            Scopes.FormEdit,
+            Scopes.FormDelete,
+            Scopes.FormPublish,
+            Scopes.FormsFeedback
+          ]),
+          roles: [Roles.Admin]
         }
       })
     })

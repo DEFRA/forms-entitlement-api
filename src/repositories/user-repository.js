@@ -15,7 +15,7 @@ const logger = createLogger()
  * Retrieves the list of documents from the database
  */
 export async function getAll() {
-  const coll = /** @type {Collection<EntitlementUser>} */ (
+  const coll = /** @type {Collection<StoredUser>} */ (
     db.collection(USER_COLLECTION_NAME)
   )
 
@@ -36,7 +36,7 @@ export async function getAll() {
 export async function get(userId, session) {
   logger.info(`Getting user with ID ${userId}`)
 
-  const coll = /** @satisfies {Collection<EntitlementUser>} */ (
+  const coll = /** @satisfies {Collection<StoredUser>} */ (
     db.collection(USER_COLLECTION_NAME)
   )
 
@@ -66,13 +66,13 @@ export async function get(userId, session) {
 
 /**
  * Create a document in the database
- * @param {EntitlementUser} document - user entitlement document
+ * @param {StoredUser} document - user entitlement document
  * @param {ClientSession} session - mongo transaction session
  */
 export async function create(document, session) {
   logger.info(`Creating user with user ID '${document.userId}'`)
 
-  const coll = /** @satisfies {Collection<EntitlementUser>} */ (
+  const coll = /** @satisfies {Collection<StoredUser>} */ (
     db.collection(USER_COLLECTION_NAME)
   )
 
@@ -173,4 +173,5 @@ export async function remove(userId, session) {
 /**
  * @import { ClientSession, Collection } from 'mongodb'
  * @import { EntitlementUser } from '@defra/forms-model'
+ * @import { StoredUser } from '~/src/api/types.js'
  */
