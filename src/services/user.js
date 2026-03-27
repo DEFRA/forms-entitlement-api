@@ -32,19 +32,13 @@ export const logger = createLogger()
 export function mapUser(document, includeScopes = false) {
   const user = /** @type {EntitlementUser} */ ({
     userId: document.userId,
-    roles: document.roles
+    roles: document.roles,
+    email: document.email,
+    displayName: document.displayName
   })
 
   if (includeScopes) {
     user.scopes = mapScopesToRoles(document.roles)
-  }
-
-  if (document.email) {
-    user.email = document.email
-  }
-
-  if (document.displayName) {
-    user.displayName = document.displayName
   }
 
   return user
