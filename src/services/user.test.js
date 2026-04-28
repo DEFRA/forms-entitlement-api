@@ -176,7 +176,8 @@ describe('User service', () => {
           Scopes.UserDelete,
           Scopes.UserEdit,
           Scopes.FormsFeedback,
-          Scopes.FormsFeedbackAllForms
+          Scopes.FormsFeedbackAllForms,
+          Scopes.FormsReport
         ]
       })
     })
@@ -199,7 +200,8 @@ describe('User service', () => {
         Scopes.UserDelete,
         Scopes.UserEdit,
         Scopes.FormsFeedback,
-        Scopes.FormsFeedbackAllForms
+        Scopes.FormsFeedbackAllForms,
+        Scopes.FormsReport
       ])
     })
 
@@ -221,7 +223,8 @@ describe('User service', () => {
           Scopes.UserDelete,
           Scopes.UserEdit,
           Scopes.FormsFeedback,
-          Scopes.FormsFeedbackAllForms
+          Scopes.FormsFeedbackAllForms,
+          Scopes.FormsReport
         ]
       })
     })
