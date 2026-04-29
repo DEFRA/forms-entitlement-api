@@ -43,11 +43,11 @@ jest.mock('~/src/mongo.js', () => ({
   prepareDb: jest.fn()
 }))
 jest.mock('~/src/helpers/logging/logger.js', () => ({
-  createLogger: jest.fn(() => ({
+  logger: {
     info: jest.fn(),
     error: jest.fn(),
     warn: jest.fn()
-  }))
+  }
 }))
 jest.mock('~/src/config/index.js', () => ({
   config: {

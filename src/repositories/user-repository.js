@@ -2,14 +2,12 @@ import { getErrorMessage } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 import { MongoServerError } from 'mongodb'
 
-import { createLogger } from '~/src/helpers/logging/logger.js'
+import { logger } from '~/src/helpers/logging/logger.js'
 import { USER_COLLECTION_NAME, db } from '~/src/mongo.js'
 
 const MAX_RESULTS = 1000
 
 const DUPLICATE_DOCUMENT_CODE = 11000
-
-const logger = createLogger()
 
 /**
  * Retrieves the list of documents from the database

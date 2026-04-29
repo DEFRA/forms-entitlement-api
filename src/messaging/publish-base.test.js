@@ -23,11 +23,9 @@ jest.mock('~/src/config/index.js', () => {
 })
 
 jest.mock('~/src/helpers/logging/logger.js', () => ({
-  createLogger: jest.fn().mockImplementation(() => {
-    return {
-      info: jest.fn()
-    }
-  })
+  logger: {
+    info: jest.fn()
+  }
 }))
 
 describe('publish-base', () => {

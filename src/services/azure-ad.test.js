@@ -49,11 +49,11 @@ jest.mock('~/src/config/index.js', () => ({
 }))
 
 jest.mock('~/src/helpers/logging/logger.js', () => ({
-  createLogger: jest.fn(() => ({
+  logger: {
     info: jest.fn(),
     error: jest.fn(),
     warn: jest.fn()
-  }))
+  }
 }))
 
 describe('Azure AD Service', () => {

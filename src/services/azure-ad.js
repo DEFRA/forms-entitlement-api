@@ -10,9 +10,7 @@ import {
   GRAPH_ERROR_CODES,
   HTTP_RESPONSE_MESSAGES
 } from '~/src/helpers/azure-error-constants.js'
-import { createLogger } from '~/src/helpers/logging/logger.js'
-
-const logger = createLogger()
+import { logger } from '~/src/helpers/logging/logger.js'
 
 /**
  * Check if error indicates a 404 Not Found condition
