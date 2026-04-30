@@ -2,9 +2,7 @@ import { getErrorMessage } from '@defra/forms-model'
 import cron from 'node-cron'
 
 import { config } from '~/src/config/index.js'
-import { createLogger } from '~/src/helpers/logging/logger.js'
-
-const logger = createLogger()
+import { logger } from '~/src/helpers/logging/logger.js'
 
 /**
  * Scheduler service for managing periodic tasks

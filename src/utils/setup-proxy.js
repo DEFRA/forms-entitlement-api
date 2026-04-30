@@ -4,8 +4,7 @@ import { ProxyAgent } from 'proxy-agent'
 import { ProxyAgent as ProxyAgentUndici, setGlobalDispatcher } from 'undici'
 
 import { config } from '~/src/config/index.js'
-import { createLogger } from '~/src/helpers/logging/logger.js'
-const logger = createLogger()
+import { logger } from '~/src/helpers/logging/logger.js'
 
 /**
  * If HTTP_PROXY is set setupProxy() will enable it globally

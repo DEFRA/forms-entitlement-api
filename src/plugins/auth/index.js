@@ -4,14 +4,12 @@ import Jwt from '@hapi/jwt'
 import { StatusCodes } from 'http-status-codes'
 
 import { config } from '~/src/config/index.js'
-import { createLogger } from '~/src/helpers/logging/logger.js'
+import { logger } from '~/src/helpers/logging/logger.js'
 import { get } from '~/src/repositories/user-repository.js'
 
 const oidcJwksUri = config.get('oidcJwksUri')
 const oidcVerifyAud = config.get('oidcVerifyAud')
 const oidcVerifyIss = config.get('oidcVerifyIss')
-
-const logger = createLogger()
 
 /**
  * Validates user credentials from JWT token and resolves user scopes from database

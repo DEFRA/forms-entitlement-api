@@ -4,7 +4,7 @@ import { StatusCodes } from 'http-status-codes'
 
 import { config } from '~/src/config/index.js'
 import { validateUserManagement } from '~/src/helpers/authorisation.js'
-import { createLogger } from '~/src/helpers/logging/logger.js'
+import { logger } from '~/src/helpers/logging/logger.js'
 import {
   publishEntitlementCreatedEvent,
   publishEntitlementDeletedEvent,
@@ -20,8 +20,6 @@ import {
   update
 } from '~/src/repositories/user-repository.js'
 import { getAzureAdService } from '~/src/services/azure-ad.js'
-
-export const logger = createLogger()
 
 /**
  * Maps a user document from MongoDB to a user object

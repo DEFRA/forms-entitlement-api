@@ -1,9 +1,7 @@
 import { getErrorMessage } from '@defra/forms-model'
 import Boom from '@hapi/boom'
 
-import { createLogger } from '~/src/helpers/logging/logger.js'
-
-const logger = createLogger()
+import { logger } from '~/src/helpers/logging/logger.js'
 
 /**
  * Manually trigger admin user sync
