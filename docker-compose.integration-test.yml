@@ -20,7 +20,7 @@ services:
 
   oidc:
     image: ghcr.io/soluto/oidc-server-mock:0.6.0
-    container_name: oidc-mock-test
+    container_name: oidc-mock-test-entitlement
     ports:
       - '5556:80'
     environment:
@@ -64,7 +64,7 @@ services:
 
   wiremock:
     image: wiremock/wiremock:3.3.1
-    container_name: wiremock-test
+    container_name: wiremock-test-entitlement
     ports:
       - '80:80'
       - '443:443'
@@ -110,9 +110,11 @@ services:
     ports:
       - '3004:3004'
     environment:
+      HOST: 0.0.0.0
+      ENVIRONMENT: local
+      PORT: 3004
       MONGO_URI: mongodb://mongo_test:27017/forms-entitlement-api-test?replicaSet=rs0&directConnection=true
       MONGO_DATABASE: forms-entitlement-api-test
-      PORT: 3004
       NODE_ENV: test
       OIDC_JWKS_URI: 'http://oidc:80/.well-known/openid-configuration/jwks'
       OIDC_VERIFY_AUD: 'newman-test-client'
@@ -122,11 +124,20 @@ services:
       AZURE_CLIENT_SECRET: 'mock-client-secret'
       AZURE_TENANT_ID: 'mock-tenant-id'
       SNS_TOPIC_ARN: ''
-      SNS_ENDPOINT: 'http://wiremock-test:80'
+      SNS_ENDPOINT: 'http://wiremock-test-entitlement:80'
       NODE_TLS_REJECT_UNAUTHORIZED: '0'
       AWS_ACCESS_KEY_ID: 'mock-access-key'
       AWS_SECRET_ACCESS_KEY: 'mock-secret-key'
-      AWS_REGION: 'us-east-1'
+      AWS_REGION: eu-west-2
+      SYNC_ADMIN_USERS_ENABLED: ${SYNC_ADMIN_USERS_ENABLED:-false}
+      SYNC_ADMIN_USERS_CRON: '0 3 * * *'
+      TRACING_HEADER: x-trace-id
+      LOG_ENABLED: true
+      LOG_FORMAT: pino-pretty
+      LOG_LEVEL: info
+      CDP_HTTPS_PROXY: ''
+      ENABLE_METRICS: false
+      ENABLE_SECURE_CONTEXT: false
     depends_on:
       mongo_test:
         condition: service_healthy
