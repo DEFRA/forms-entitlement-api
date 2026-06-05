@@ -32,6 +32,7 @@ RUN apk update && \
 USER node
 
 COPY --from=development /home/node/package*.json ./
+COPY --from=development /home/node/.npmrc ./
 COPY --from=development /home/node/.server ./.server/
 
 RUN npm ci --omit=dev
