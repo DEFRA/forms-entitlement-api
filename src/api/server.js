@@ -60,7 +60,7 @@ export async function createServer() {
     prepareSecureContext(server)
   }
 
-  await prepareDb(server.logger)
+  await prepareDb(/** @type {any} */ (server.logger))
 
   server.decorate('server', 'mongoClient', client)
   server.decorate('server', 'db', db)
