@@ -68,6 +68,9 @@ export const buildMockCollection = () => {
     },
     get timeoutMS() {
       return undefined
+    },
+    get db() {
+      return /** @type {any} */ (undefined)
     }
   }
 }
