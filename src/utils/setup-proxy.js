@@ -16,9 +16,7 @@ export const setupProxy = () => {
 
   // patch well known libraries to use the proxy. These are typically used by libraries, rather than our preferred API client (Wreck).
   if (proxyUrl) {
-    logger.info(
-      `setting up global proxies ${proxyUrl} ${Buffer.from(proxyUrl, 'utf8').toString('base64')}`
-    )
+    logger.info('setting up global proxies')
 
     // Undici proxy
     setGlobalDispatcher(new ProxyAgentUndici(proxyUrl))
