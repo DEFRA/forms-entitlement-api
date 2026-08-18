@@ -65,17 +65,17 @@
     "undici": "8.3.0"
   },
   "devDependencies": {
-    "@babel/cli": "7.29.7",
-    "@babel/core": "7.29.7",
+    "@babel/cli": "8.0.1",
+    "@babel/core": "8.0.1",
     "@babel/plugin-syntax-import-attributes": "7.29.7",
-    "@babel/preset-env": "7.29.7",
+    "@babel/preset-env": "8.0.2",
     "@types/convict": "^6.1.6",
     "@types/global-agent": "3.0.0",
     "@types/jest": "30.0.0",
     "@types/node": "25.9.1",
     "babel-jest": "30.4.1",
     "babel-plugin-module-resolver": "5.0.3",
-    "babel-plugin-transform-import-meta": "^2.3.3",
+    "babel-plugin-transform-import-meta": "^3.0.0",
     "editorconfig-checker": "6.1.1",
     "eslint": "9.39.4",
     "eslint-config-prettier": "10.1.8",
@@ -90,7 +90,7 @@
     "oidc-client-ts": "3.5.0",
     "prettier": "3.8.3",
     "tsx": "4.22.4",
-    "typescript": "^5.8.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "8.56.1"
   },
   "overrides": {
