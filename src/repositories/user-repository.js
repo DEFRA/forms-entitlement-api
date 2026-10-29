@@ -49,7 +49,7 @@ export async function get(userId, session) {
 
     return document
   } catch (err) {
-    logger.error(
+    logger.info(
       err,
       `[getUserById] Getting user with ID '${userId}' failed - ${getErrorMessage(err)}`
     )
