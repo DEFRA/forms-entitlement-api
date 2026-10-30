@@ -1,4 +1,5 @@
 import { PublishCommand, SNSClient } from '@aws-sdk/client-sns'
+import { createLogContext, runWithLogContext } from '@defra/forms-common'
 import { buildFormCreatedMessage } from '@defra/forms-model/stubs'
 import { mockClient } from 'aws-sdk-client-mock'
 
@@ -51,6 +52,30 @@ describe('publish-base', () => {
       expect(snsMock).toHaveReceivedCommandWith(PublishCommand, {
         TopicArn: 'arn:aws:sns:eu-west-2:000000000000:forms_entitlement_events',
         Message: JSON.stringify(message)
+      })
+    })
+
+    it('should publish the log context as message attributes', async () => {
+      snsMock.on(PublishCommand).resolves({
+        MessageId: '00000000-0000-0000-0000-000000000000'
+      })
+
+      const context = createLogContext({
+        correlationId: 'correlation-id',
+        userId: 'user-id',
+        sessionId: 'session-id',
+        referenceNumber: 'ABC-123-DEF'
+      })
+
+      await runWithLogContext(context, () => publishEvent(message))
+
+      expect(snsMock).toHaveReceivedCommandWith(PublishCommand, {
+        MessageAttributes: {
+          correlationId: { DataType: 'String', StringValue: 'correlation-id' },
+          userId: { DataType: 'String', StringValue: 'user-id' },
+          sessionId: { DataType: 'String', StringValue: 'session-id' },
+          referenceNumber: { DataType: 'String', StringValue: 'ABC-123-DEF' }
+        }
       })
     })
   })
