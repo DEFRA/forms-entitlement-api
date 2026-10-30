@@ -42,6 +42,7 @@ updates:
 
       forms:
         patterns:
+          - '@defra/forms-common'
           - '@defra/forms-model'
 
       aws:
